@@ -19,7 +19,7 @@ Requires:
 xcodegen generate          # generates RecipeApp.xcodeproj from project.yml — do this after cloning or editing project.yml
 open -a Simulator
 xcodebuild -project RecipeApp.xcodeproj -scheme RecipeApp \
-  -destination 'platform=iOS Simulator,name=iPhone 15' build
+  -destination 'platform=iOS Simulator,name=iPhone 17' build
 ```
 
 Or in VS Code: Cmd+Shift+B runs the default build task (see `.vscode/tasks.json`).

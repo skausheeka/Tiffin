@@ -10,7 +10,7 @@
     {
       "label": "Build (iOS Simulator)",
       "type": "shell",
-      "command": "xcodebuild -project RecipeApp.xcodeproj -scheme RecipeApp -destination 'platform=iOS Simulator,name=iPhone 15' build",
+      "command": "xcodebuild -project RecipeApp.xcodeproj -scheme RecipeApp -destination 'platform=iOS Simulator,name=iPhone 17' build",
       "problemMatcher": ["$swiftc"],
       "group": {
         "kind": "build",
