@@ -2,7 +2,7 @@ name: RecipeApp
 options:
   bundleIdPrefix: com.srinathk
   deploymentTarget:
-    iOS: "17.0"
+    iOS: "18.4"
 targets:
   RecipeApp:
     type: application
