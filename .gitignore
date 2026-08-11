@@ -1,0 +1,22 @@
+# Xcode / Swift
+.DS_Store
+build/
+DerivedData/
+*.xcodeproj
+!default.xcodeproj
+xcuserdata/
+.swiftpm/
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# XcodeGen generates the .xcodeproj from project.yml — don't track the generated project
+*.xcodeproj/
+
+# CocoaPods / SPM (not used yet, but harmless to ignore early)
+Pods/
+.build/

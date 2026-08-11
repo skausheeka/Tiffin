@@ -1,0 +1,35 @@
+name: RecipeApp
+options:
+  bundleIdPrefix: com.srinathk
+  deploymentTarget:
+    iOS: "17.0"
+targets:
+  RecipeApp:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.srinathk.RecipeApp
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.0"
+    info:
+      path: Sources/Info.plist
+      properties:
+        UILaunchScreen: {}
+        CFBundleDisplayName: Recipe App
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+schemes:
+  RecipeApp:
+    build:
+      targets:
+        RecipeApp: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    archive:
+      config: Release

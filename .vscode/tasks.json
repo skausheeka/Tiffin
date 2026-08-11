@@ -1,0 +1,21 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Generate Xcode project (xcodegen)",
+      "type": "shell",
+      "command": "xcodegen generate",
+      "problemMatcher": []
+    },
+    {
+      "label": "Build (iOS Simulator)",
+      "type": "shell",
+      "command": "xcodebuild -project RecipeApp.xcodeproj -scheme RecipeApp -destination 'platform=iOS Simulator,name=iPhone 15' build",
+      "problemMatcher": ["$swiftc"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}
