@@ -58,4 +58,43 @@ final class Recipe {
     var coverPhotoFilename: String? {
         photoFilenames.first
     }
+
+    /// Rated recipes only, highest rating first, ties broken by times cooked.
+    static func ranked(_ recipes: [Recipe]) -> [Recipe] {
+        recipes
+            .filter { $0.rating != nil }
+            .sorted { lhs, rhs in
+                let lhsRating = lhs.rating ?? 0
+                let rhsRating = rhs.rating ?? 0
+                if lhsRating != rhsRating { return lhsRating > rhsRating }
+                return lhs.timesCooked > rhs.timesCooked
+            }
+    }
+
+    /// Trims each row's name/unit and drops rows left with no name (e.g. a blank trailing row).
+    static func cleanIngredients(_ rows: [IngredientEntry]) -> [IngredientEntry] {
+        rows
+            .map { entry -> IngredientEntry in
+                var cleaned = entry
+                cleaned.name = entry.name.trimmingCharacters(in: .whitespaces)
+                cleaned.unit = entry.unit.trimmingCharacters(in: .whitespaces)
+                return cleaned
+            }
+            .filter { !$0.name.isEmpty }
+    }
+
+    /// Trims each step and drops any left blank (e.g. an untouched trailing step).
+    static func cleanSteps(_ steps: [String]) -> [String] {
+        steps
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+    }
+
+    /// Splits comma-separated tag input, trimming whitespace and dropping empty entries.
+    static func parseTags(_ text: String) -> [String] {
+        text
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+    }
 }

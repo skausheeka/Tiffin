@@ -6,14 +6,7 @@ struct LeaderboardView: View {
     @Query(sort: \Recipe.createdAt, order: .reverse) private var allRecipes: [Recipe]
 
     private var rankedRecipes: [Recipe] {
-        allRecipes
-            .filter { $0.rating != nil }
-            .sorted { lhs, rhs in
-                let lhsRating = lhs.rating ?? 0
-                let rhsRating = rhs.rating ?? 0
-                if lhsRating != rhsRating { return lhsRating > rhsRating }
-                return lhs.timesCooked > rhs.timesCooked
-            }
+        Recipe.ranked(allRecipes)
     }
 
     var body: some View {

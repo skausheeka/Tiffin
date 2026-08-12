@@ -220,23 +220,9 @@ struct AddRecipeView: View {
     }
 
     private func save() {
-        let ingredients = ingredientRows
-            .map { entry -> IngredientEntry in
-                var cleaned = entry
-                cleaned.name = entry.name.trimmingCharacters(in: .whitespaces)
-                cleaned.unit = entry.unit.trimmingCharacters(in: .whitespaces)
-                return cleaned
-            }
-            .filter { !$0.name.isEmpty }
-
-        let instructionSteps = steps
-            .map { $0.text.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
-
-        let tags = tagsText
-            .split(separator: ",")
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
+        let ingredients = Recipe.cleanIngredients(ingredientRows)
+        let instructionSteps = Recipe.cleanSteps(steps.map(\.text))
+        let tags = Recipe.parseTags(tagsText)
 
         let sourceURL = sourceURLText.trimmingCharacters(in: .whitespaces)
         let note = noteText.trimmingCharacters(in: .whitespaces)

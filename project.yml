@@ -23,14 +23,29 @@ targets:
         CFBundleDisplayName: Tiffin
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+  RecipeAppTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests/RecipeAppTests
+    settings:
+      base:
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.srinathk.RecipeAppTests
+    dependencies:
+      - target: RecipeApp
 schemes:
   RecipeApp:
     build:
       targets:
         RecipeApp: all
+        RecipeAppTests: [test]
     run:
       config: Debug
     test:
       config: Debug
+      targets:
+        - RecipeAppTests
     archive:
       config: Release
