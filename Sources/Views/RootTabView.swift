@@ -1,12 +1,11 @@
 import SwiftUI
 
 private enum AppTab: Hashable {
-    case recipes, mealPlan, add, discover, profile
+    case recipes, mealPlan, leaderboard, discover, profile
 }
 
 struct RootTabView: View {
     @State private var selectedTab: AppTab = .recipes
-    @State private var isPresentingAddRecipe = false
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -19,8 +18,8 @@ struct RootTabView: View {
             }
             .disabled(true)
 
-            Tab("Add", systemImage: "plus.circle.fill", value: AppTab.add) {
-                Color.clear
+            Tab("Leaderboard", systemImage: "star.fill", value: AppTab.leaderboard) {
+                LeaderboardView()
             }
 
             Tab("Discover", systemImage: "sparkle.magnifyingglass", value: AppTab.discover) {
@@ -33,15 +32,8 @@ struct RootTabView: View {
             }
             .disabled(true)
         }
-        .onChange(of: selectedTab) { oldValue, newValue in
-            if newValue == .add {
-                isPresentingAddRecipe = true
-                selectedTab = oldValue
-            }
-        }
-        .sheet(isPresented: $isPresentingAddRecipe) {
-            AddRecipeView()
-        }
+        .toolbarBackground(AppColor.surface, for: .tabBar)
+        .toolbarBackground(.visible, for: .tabBar)
     }
 }
 
@@ -53,6 +45,7 @@ private struct PlaceholderTabView: View {
         NavigationStack {
             ContentUnavailableView(title, systemImage: systemImage, description: Text("Coming in a later phase."))
                 .navigationTitle(title)
+                .background(AppColor.background)
         }
     }
 }

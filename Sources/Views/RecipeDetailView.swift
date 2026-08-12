@@ -4,6 +4,8 @@ import UIKit
 struct RecipeDetailView: View {
     let recipe: Recipe
 
+    @State private var isPresentingEdit = false
+
     private var coverImage: UIImage? {
         guard let filename = recipe.coverPhotoFilename else { return nil }
         return UIImage(contentsOfFile: PhotoStore.url(for: filename).path)
@@ -30,38 +32,99 @@ struct RecipeDetailView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
 
+                if let course = recipe.courseValue {
+                    Text(course.rawValue)
+                        .font(.caption.weight(.bold))
+                        .textCase(.uppercase)
+                        .tracking(0.4)
+                        .foregroundStyle(AppColor.accent)
+                }
+
                 if !recipe.tags.isEmpty {
-                    Text(recipe.tags.joined(separator: ", "))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 6) {
+                            ForEach(recipe.tags, id: \.self) { tag in
+                                NavigationLink(value: TagFilter(tag: tag)) {
+                                    Text(tag)
+                                        .font(.caption.weight(.medium))
+                                        .foregroundStyle(AppColor.ink)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 4)
+                                        .background(AppColor.accentSoft, in: Capsule())
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
                 }
 
                 if let metaLine {
                     Text(metaLine)
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AppColor.inkMuted)
+                }
+
+                HStack(spacing: 12) {
+                    StarRatingView(rating: recipe.rating, size: 20) { star in
+                        recipe.rating = (recipe.rating == star) ? nil : star
+                    }
+                    Button {
+                        recipe.timesCooked += 1
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "plus.circle.fill")
+                            Text("Cooked ×\(recipe.timesCooked)")
+                        }
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(AppColor.ink)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(AppColor.secondarySoft, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                if let note = recipe.note, !note.isEmpty {
+                    Text("\u{201C}\(note)\u{201D}")
+                        .font(.subheadline)
+                        .italic()
+                        .foregroundStyle(AppColor.inkMuted)
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(AppColor.surfaceAlt, in: RoundedRectangle(cornerRadius: 12))
                 }
 
                 if !recipe.ingredients.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Ingredients").font(.title3.bold())
+                        Text("Ingredients").font(.title3.bold()).foregroundStyle(AppColor.ink)
                         ForEach(recipe.ingredients) { ingredient in
                             Text("• \(ingredientLine(ingredient))")
+                                .foregroundStyle(AppColor.ink)
                         }
                     }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(AppColor.surfaceAlt, in: RoundedRectangle(cornerRadius: 14))
                 }
 
                 if !recipe.instructionSteps.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Instructions").font(.title3.bold())
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Instructions").font(.title3.bold()).foregroundStyle(AppColor.ink)
                         ForEach(Array(recipe.instructionSteps.enumerated()), id: \.offset) { index, step in
                             HStack(alignment: .top, spacing: 8) {
-                                Text("\(index + 1).")
-                                    .foregroundStyle(.secondary)
+                                Text("\(index + 1)")
+                                    .font(.caption.weight(.bold))
+                                    .foregroundStyle(AppColor.surface)
+                                    .frame(width: 20, height: 20)
+                                    .background(AppColor.secondary, in: Circle())
                                 Text(step)
+                                    .foregroundStyle(AppColor.ink)
                             }
                         }
                     }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(AppColor.surfaceAlt, in: RoundedRectangle(cornerRadius: 14))
                 }
 
                 if let sourceURLString = recipe.sourceURL, let url = URL(string: sourceURLString) {
@@ -69,12 +132,26 @@ struct RecipeDetailView: View {
                         Label("View source", systemImage: "link")
                     }
                     .font(.subheadline)
+                    .foregroundStyle(AppColor.accent)
                 }
             }
             .padding()
         }
+        .background(AppColor.background)
         .navigationTitle(recipe.title)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    isPresentingEdit = true
+                } label: {
+                    Label("Edit", systemImage: "pencil")
+                }
+            }
+        }
+        .sheet(isPresented: $isPresentingEdit) {
+            AddRecipeView(existingRecipe: recipe)
+        }
     }
 
     private func ingredientLine(_ ingredient: IngredientEntry) -> String {

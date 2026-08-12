@@ -17,17 +17,44 @@ struct AddRecipeView: View {
     @Environment(\.dismiss) private var dismiss
     @FocusState private var focusedField: Field?
 
-    @State private var title = ""
-    @State private var ingredientRows: [IngredientEntry] = [IngredientEntry()]
-    @State private var steps: [StepEntry] = [StepEntry(text: "")]
-    @State private var tagsText = ""
-    @State private var prepTimeText = ""
-    @State private var cookTimeText = ""
-    @State private var servingsText = ""
-    @State private var sourceURLText = ""
+    private let existingRecipe: Recipe?
+
+    @State private var title: String
+    @State private var ingredientRows: [IngredientEntry]
+    @State private var steps: [StepEntry]
+    @State private var tagsText: String
+    @State private var prepTimeText: String
+    @State private var cookTimeText: String
+    @State private var servingsText: String
+    @State private var sourceURLText: String
+    @State private var noteText: String
+    @State private var selectedCourse: RecipeCourse?
 
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var selectedPhotoData: Data?
+    @State private var didChangePhoto = false
+
+    init(existingRecipe: Recipe? = nil) {
+        self.existingRecipe = existingRecipe
+        _title = State(initialValue: existingRecipe?.title ?? "")
+        _ingredientRows = State(initialValue: existingRecipe?.ingredients.isEmpty == false ? existingRecipe!.ingredients : [IngredientEntry()])
+        let existingSteps = existingRecipe?.instructionSteps.map { StepEntry(text: $0) } ?? []
+        _steps = State(initialValue: existingSteps.isEmpty ? [StepEntry(text: "")] : existingSteps)
+        _tagsText = State(initialValue: existingRecipe?.tags.joined(separator: ", ") ?? "")
+        _prepTimeText = State(initialValue: existingRecipe?.prepTimeMinutes.map(String.init) ?? "")
+        _cookTimeText = State(initialValue: existingRecipe?.cookTimeMinutes.map(String.init) ?? "")
+        _servingsText = State(initialValue: existingRecipe?.servings.map(String.init) ?? "")
+        _sourceURLText = State(initialValue: existingRecipe?.sourceURL ?? "")
+        _noteText = State(initialValue: existingRecipe?.note ?? "")
+        _selectedCourse = State(initialValue: existingRecipe?.courseValue)
+
+        if let filename = existingRecipe?.coverPhotoFilename,
+           let data = try? Data(contentsOf: PhotoStore.url(for: filename)) {
+            _selectedPhotoData = State(initialValue: data)
+        } else {
+            _selectedPhotoData = State(initialValue: nil)
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -51,6 +78,7 @@ struct AddRecipeView: View {
                     }
                     .onChange(of: selectedPhotoItem) {
                         Task {
+                            didChangePhoto = true
                             selectedPhotoData = try? await selectedPhotoItem?.loadTransferable(type: Data.self)
                         }
                     }
@@ -112,6 +140,12 @@ struct AddRecipeView: View {
                     }
                 }
                 Section("Details") {
+                    Picker("Course", selection: $selectedCourse) {
+                        Text("None").tag(RecipeCourse?.none)
+                        ForEach(RecipeCourse.allCases) { course in
+                            Text(course.rawValue).tag(RecipeCourse?.some(course))
+                        }
+                    }
                     TextField("Prep time (minutes)", text: $prepTimeText)
                         .keyboardType(.numberPad)
                         .focused($focusedField, equals: .prepTime)
@@ -138,9 +172,15 @@ struct AddRecipeView: View {
                 Section("Tags") {
                     TextField("Comma separated, e.g. dinner, pasta", text: $tagsText)
                 }
+                Section("Notes") {
+                    TextField("e.g. add more salt next time", text: $noteText, axis: .vertical)
+                        .lineLimit(1...4)
+                }
             }
             .scrollDismissesKeyboard(.interactively)
-            .navigationTitle("New Recipe")
+            .scrollContentBackground(.hidden)
+            .background(AppColor.background)
+            .navigationTitle(existingRecipe == nil ? "New Recipe" : "Edit Recipe")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -172,25 +212,52 @@ struct AddRecipeView: View {
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
 
-        var photoFilenames: [String] = []
-        if let selectedPhotoData, let filename = PhotoStore.save(selectedPhotoData) {
-            photoFilenames.append(filename)
-        }
-
         let sourceURL = sourceURLText.trimmingCharacters(in: .whitespaces)
+        let note = noteText.trimmingCharacters(in: .whitespaces)
 
-        let recipe = Recipe(
-            title: title.trimmingCharacters(in: .whitespaces),
-            ingredients: ingredients,
-            instructionSteps: instructionSteps,
-            tags: tags,
-            photoFilenames: photoFilenames,
-            prepTimeMinutes: Int(prepTimeText),
-            cookTimeMinutes: Int(cookTimeText),
-            servings: Int(servingsText),
-            sourceURL: sourceURL.isEmpty ? nil : sourceURL
-        )
-        modelContext.insert(recipe)
+        if let existingRecipe {
+            existingRecipe.title = title.trimmingCharacters(in: .whitespaces)
+            existingRecipe.ingredients = ingredients
+            existingRecipe.instructionSteps = instructionSteps
+            existingRecipe.tags = tags
+            existingRecipe.prepTimeMinutes = Int(prepTimeText)
+            existingRecipe.cookTimeMinutes = Int(cookTimeText)
+            existingRecipe.servings = Int(servingsText)
+            existingRecipe.sourceURL = sourceURL.isEmpty ? nil : sourceURL
+            existingRecipe.course = selectedCourse?.rawValue
+            existingRecipe.note = note.isEmpty ? nil : note
+
+            if didChangePhoto {
+                for filename in existingRecipe.photoFilenames {
+                    PhotoStore.delete(filename)
+                }
+                if let selectedPhotoData, let filename = PhotoStore.save(selectedPhotoData) {
+                    existingRecipe.photoFilenames = [filename]
+                } else {
+                    existingRecipe.photoFilenames = []
+                }
+            }
+        } else {
+            var photoFilenames: [String] = []
+            if let selectedPhotoData, let filename = PhotoStore.save(selectedPhotoData) {
+                photoFilenames.append(filename)
+            }
+
+            let recipe = Recipe(
+                title: title.trimmingCharacters(in: .whitespaces),
+                ingredients: ingredients,
+                instructionSteps: instructionSteps,
+                tags: tags,
+                photoFilenames: photoFilenames,
+                prepTimeMinutes: Int(prepTimeText),
+                cookTimeMinutes: Int(cookTimeText),
+                servings: Int(servingsText),
+                sourceURL: sourceURL.isEmpty ? nil : sourceURL,
+                course: selectedCourse,
+                note: note.isEmpty ? nil : note
+            )
+            modelContext.insert(recipe)
+        }
         dismiss()
     }
 }

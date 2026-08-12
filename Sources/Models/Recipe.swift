@@ -13,6 +13,10 @@ final class Recipe {
     var cookTimeMinutes: Int?
     var servings: Int?
     var sourceURL: String?
+    var course: String?
+    var rating: Int?
+    var note: String?
+    var timesCooked: Int = 0
 
     init(
         title: String,
@@ -24,7 +28,11 @@ final class Recipe {
         prepTimeMinutes: Int? = nil,
         cookTimeMinutes: Int? = nil,
         servings: Int? = nil,
-        sourceURL: String? = nil
+        sourceURL: String? = nil,
+        course: RecipeCourse? = nil,
+        rating: Int? = nil,
+        note: String? = nil,
+        timesCooked: Int = 0
     ) {
         self.title = title
         self.ingredients = ingredients
@@ -36,6 +44,14 @@ final class Recipe {
         self.cookTimeMinutes = cookTimeMinutes
         self.servings = servings
         self.sourceURL = sourceURL
+        self.course = course?.rawValue
+        self.rating = rating
+        self.note = note
+        self.timesCooked = timesCooked
+    }
+
+    var courseValue: RecipeCourse? {
+        course.flatMap(RecipeCourse.init(rawValue:))
     }
 
     var coverPhotoFilename: String? {
