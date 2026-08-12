@@ -1,4 +1,4 @@
-# RecipeApp
+# Tiffin
 
 A native iOS recipe app, built as a learning project (product dev, AI-assisted building, and SWE fundamentals). Swift + SwiftUI + SwiftData, edited in VS Code, built via Xcode's toolchain.
 
