@@ -20,3 +20,6 @@ xcuserdata/
 # CocoaPods / SPM (not used yet, but harmless to ignore early)
 Pods/
 .build/
+
+# Claude Code local config — machine-local, not meant to be shared via git
+.claude/
