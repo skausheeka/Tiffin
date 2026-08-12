@@ -16,26 +16,26 @@ extension Color {
     }
 }
 
-/// Cardamom & Rose — the app's committed pastel palette, light/dark paired.
+/// Tiffin — vivid indigo/teal/coral palette, light/dark paired.
 enum AppColor {
-    static let background = Color(light: Color(hex: 0xF8F3F6), dark: Color(hex: 0x201A1E))
-    static let surface = Color(light: Color(hex: 0xFFFFFF), dark: Color(hex: 0x2B232A))
-    static let surfaceAlt = Color(light: Color(hex: 0xEFE2EA), dark: Color(hex: 0x362C34))
+    static let background = Color(light: Color(hex: 0xF5F6FC), dark: Color(hex: 0x100F1E))
+    static let surface = Color(light: Color(hex: 0xFFFFFF), dark: Color(hex: 0x1B1A2E))
+    static let surfaceAlt = Color(light: Color(hex: 0xEDEFFB), dark: Color(hex: 0x262540))
 
-    static let ink = Color(light: Color(hex: 0x3E2E3A), dark: Color(hex: 0xF1E6EE))
-    static let inkMuted = Color(light: Color(hex: 0x8A7686), dark: Color(hex: 0xC2AEC0))
+    static let ink = Color(light: Color(hex: 0x16162A), dark: Color(hex: 0xF1F1FF))
+    static let inkMuted = Color(light: Color(hex: 0x6B6B85), dark: Color(hex: 0xA8A6C8))
 
-    static let accent = Color(light: Color(hex: 0xA5789B), dark: Color(hex: 0xC79BC0))
-    static let accentSoft = Color(light: Color(hex: 0xE3D2E0), dark: Color(hex: 0x4A3A48))
+    static let accent = Color(light: Color(hex: 0x3D5AFF), dark: Color(hex: 0x7B8CFF))
+    static let accentSoft = Color(light: Color(hex: 0xDDE1FF), dark: Color(hex: 0x33355E))
 
-    static let secondary = Color(light: Color(hex: 0x8FAE93), dark: Color(hex: 0xA9C9AE))
-    static let secondarySoft = Color(light: Color(hex: 0xD7E6D9), dark: Color(hex: 0x3A4A3E))
+    static let secondary = Color(light: Color(hex: 0x17BFAE), dark: Color(hex: 0x4FE0CE))
+    static let secondarySoft = Color(light: Color(hex: 0xC9F5EF), dark: Color(hex: 0x1D4A44))
 
-    static let tertiary = Color(light: Color(hex: 0xD89A93), dark: Color(hex: 0xE0ACA6))
-    static let tertiarySoft = Color(light: Color(hex: 0xF1D9D5), dark: Color(hex: 0x4A3230))
+    static let tertiary = Color(light: Color(hex: 0xFF5C8A), dark: Color(hex: 0xFF85AA))
+    static let tertiarySoft = Color(light: Color(hex: 0xFFDCE6), dark: Color(hex: 0x5C2438))
 
-    static let gold = Color(light: Color(hex: 0xC9A15A), dark: Color(hex: 0xE0BD7C))
-    static let goldSoft = Color(light: Color(hex: 0xECDCB8), dark: Color(hex: 0x4A3F28))
+    static let gold = Color(light: Color(hex: 0xF5B400), dark: Color(hex: 0xFFD873))
+    static let goldSoft = Color(light: Color(hex: 0xFFEEC2), dark: Color(hex: 0x4A3A12))
 
     static func forCourse(_ course: RecipeCourse?) -> Color {
         switch course {
