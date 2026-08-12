@@ -36,4 +36,13 @@ enum AppColor {
 
     static let gold = Color(light: Color(hex: 0xC9A15A), dark: Color(hex: 0xE0BD7C))
     static let goldSoft = Color(light: Color(hex: 0xECDCB8), dark: Color(hex: 0x4A3F28))
+
+    static func forCourse(_ course: RecipeCourse?) -> Color {
+        switch course {
+        case .entree: accent
+        case .appetizer: secondary
+        case .dessert: tertiary
+        case nil: inkMuted
+        }
+    }
 }

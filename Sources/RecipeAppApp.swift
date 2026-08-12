@@ -8,6 +8,6 @@ struct RecipeAppApp: App {
             RootTabView()
                 .tint(AppColor.accent)
         }
-        .modelContainer(for: Recipe.self)
+        .modelContainer(for: [Recipe.self, MealPlanEntry.self])
     }
 }

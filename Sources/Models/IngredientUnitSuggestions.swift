@@ -725,6 +725,18 @@ enum IngredientUnitSuggestions {
         "turbinado sugar": "cup",
     ]
 
+    /// Every distinct unit used in the suggestions table, common ones first, for use in a picker.
+    static let allUnits: [String] = {
+        let priority = [
+            "cup", "tbsp", "tsp", "lb", "oz", "whole", "clove", "pinch",
+            "sprig", "head", "ear", "can", "in", "loaf", "bunch", "stalk",
+        ]
+        let known = Set(table.values)
+        let ordered = priority.filter { known.contains($0) }
+        let remaining = known.subtracting(priority).sorted()
+        return ordered + remaining
+    }()
+
     static func suggestedUnit(for ingredientName: String) -> String? {
         let name = ingredientName.lowercased().trimmingCharacters(in: .whitespaces)
         guard !name.isEmpty else { return nil }

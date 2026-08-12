@@ -33,6 +33,7 @@ struct AddRecipeView: View {
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var selectedPhotoData: Data?
     @State private var didChangePhoto = false
+    @State private var customUnitRowIDs: Set<UUID> = []
 
     init(existingRecipe: Recipe? = nil) {
         self.existingRecipe = existingRecipe
@@ -89,8 +90,32 @@ struct AddRecipeView: View {
                             TextField("Amt", value: $row.amount, format: .number)
                                 .keyboardType(.decimalPad)
                                 .frame(width: 50)
-                            TextField("Unit", text: $row.unit)
-                                .frame(width: 60)
+
+                            if customUnitRowIDs.contains(row.id) {
+                                TextField("Unit", text: $row.unit)
+                                    .frame(width: 70)
+                                    .onChange(of: row.unit) { _, newValue in
+                                        if newValue.isEmpty {
+                                            customUnitRowIDs.remove(row.id)
+                                        }
+                                    }
+                            } else {
+                                Menu {
+                                    ForEach(IngredientUnitSuggestions.allUnits, id: \.self) { unit in
+                                        Button(unit) { row.unit = unit }
+                                    }
+                                    Divider()
+                                    Button("Other…") {
+                                        row.unit = ""
+                                        customUnitRowIDs.insert(row.id)
+                                    }
+                                } label: {
+                                    Text(row.unit.isEmpty ? "Unit" : row.unit)
+                                        .foregroundStyle(row.unit.isEmpty ? AppColor.inkMuted : AppColor.ink)
+                                        .frame(width: 70, alignment: .leading)
+                                }
+                            }
+
                             TextField("Ingredient", text: $row.name)
                                 .onChange(of: row.name) { _, newValue in
                                     if row.unit.isEmpty, let suggestion = IngredientUnitSuggestions.suggestedUnit(for: newValue) {
@@ -100,6 +125,7 @@ struct AddRecipeView: View {
                             if ingredientRows.count > 1 {
                                 Button(role: .destructive) {
                                     ingredientRows.removeAll { $0.id == row.id }
+                                    customUnitRowIDs.remove(row.id)
                                 } label: {
                                     Image(systemName: "minus.circle.fill")
                                         .foregroundStyle(.red)

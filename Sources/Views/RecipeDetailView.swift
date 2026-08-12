@@ -5,6 +5,7 @@ struct RecipeDetailView: View {
     let recipe: Recipe
 
     @State private var isPresentingEdit = false
+    @State private var isPresentingMealPlanAdd = false
 
     private var coverImage: UIImage? {
         guard let filename = recipe.coverPhotoFilename else { return nil }
@@ -143,6 +144,13 @@ struct RecipeDetailView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
+                    isPresentingMealPlanAdd = true
+                } label: {
+                    Label("Add to Meal Plan", systemImage: "calendar.badge.plus")
+                }
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button {
                     isPresentingEdit = true
                 } label: {
                     Label("Edit", systemImage: "pencil")
@@ -151,6 +159,9 @@ struct RecipeDetailView: View {
         }
         .sheet(isPresented: $isPresentingEdit) {
             AddRecipeView(existingRecipe: recipe)
+        }
+        .sheet(isPresented: $isPresentingMealPlanAdd) {
+            MealPlanEntryFormView(preselectedRecipe: recipe)
         }
     }
 

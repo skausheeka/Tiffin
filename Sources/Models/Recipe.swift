@@ -17,6 +17,7 @@ final class Recipe {
     var rating: Int?
     var note: String?
     var timesCooked: Int = 0
+    @Relationship(deleteRule: .cascade, inverse: \MealPlanEntry.recipe) var mealPlanEntries: [MealPlanEntry] = []
 
     init(
         title: String,

@@ -14,9 +14,8 @@ struct RootTabView: View {
             }
 
             Tab("Meal Plan", systemImage: "calendar", value: AppTab.mealPlan) {
-                PlaceholderTabView(title: "Meal Plan", systemImage: "calendar")
+                MealPlanView()
             }
-            .disabled(true)
 
             Tab("Leaderboard", systemImage: "star.fill", value: AppTab.leaderboard) {
                 LeaderboardView()
@@ -52,5 +51,5 @@ private struct PlaceholderTabView: View {
 
 #Preview {
     RootTabView()
-        .modelContainer(for: Recipe.self, inMemory: true)
+        .modelContainer(for: [Recipe.self, MealPlanEntry.self], inMemory: true)
 }
