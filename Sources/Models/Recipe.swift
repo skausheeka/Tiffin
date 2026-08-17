@@ -3,20 +3,20 @@ import SwiftData
 
 @Model
 final class Recipe {
-    var title: String
-    var ingredients: [IngredientEntry]
-    var instructionSteps: [String]
-    var tags: [String]
-    var createdAt: Date
-    var photoFilenames: [String]
+    var title: String = ""
+    var ingredients: [IngredientEntry] = []
+    var instructionSteps: [String] = []
+    var tags: [String] = []
+    var createdAt: Date = Date.now
+    var photoFilenames: [String] = []
     var prepTimeMinutes: Int?
     var cookTimeMinutes: Int?
     var servings: Int?
     var sourceURL: String?
     var course: String?
     var note: String?
-    @Relationship(deleteRule: .cascade, inverse: \MealPlanEntry.recipe) var mealPlanEntries: [MealPlanEntry] = []
-    @Relationship(deleteRule: .cascade, inverse: \CookingLogEntry.recipe) var cookingLogEntries: [CookingLogEntry] = []
+    @Relationship(deleteRule: .cascade, inverse: \MealPlanEntry.recipe) var mealPlanEntries: [MealPlanEntry]? = []
+    @Relationship(deleteRule: .cascade, inverse: \CookingLogEntry.recipe) var cookingLogEntries: [CookingLogEntry]? = []
 
     init(
         title: String,
@@ -56,14 +56,15 @@ final class Recipe {
 
     /// Average of every logged cooking rating for this recipe, or nil if it's never been logged.
     var averageRating: Double? {
-        guard !cookingLogEntries.isEmpty else { return nil }
-        let total = cookingLogEntries.reduce(0) { $0 + $1.rating }
-        return Double(total) / Double(cookingLogEntries.count)
+        let entries = cookingLogEntries ?? []
+        guard !entries.isEmpty else { return nil }
+        let total = entries.reduce(0) { $0 + $1.rating }
+        return Double(total) / Double(entries.count)
     }
 
     /// Number of times this recipe has been logged as cooked.
     var timesCooked: Int {
-        cookingLogEntries.count
+        cookingLogEntries?.count ?? 0
     }
 
     /// Rated recipes only, highest average rating first, ties broken by times cooked.

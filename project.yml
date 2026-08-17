@@ -23,6 +23,13 @@ targets:
         CFBundleDisplayName: Tiffin
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+    entitlements:
+      path: Sources/RecipeApp.entitlements
+      properties:
+        com.apple.developer.icloud-container-identifiers:
+          - iCloud.com.srinathk.RecipeApp
+        com.apple.developer.icloud-services:
+          - CloudKit
   RecipeAppTests:
     type: bundle.unit-test
     platform: iOS

@@ -70,8 +70,8 @@ final class CookingLogEntryTests: XCTestCase {
         context.insert(entry)
         try context.save()
 
-        XCTAssertEqual(recipe.cookingLogEntries.count, 1)
-        XCTAssertTrue(recipe.cookingLogEntries.first === entry)
+        XCTAssertEqual(recipe.cookingLogEntries?.count, 1)
+        XCTAssertTrue(recipe.cookingLogEntries?.first === entry)
     }
 
     func test_averageRating_isNilWithNoEntries() {

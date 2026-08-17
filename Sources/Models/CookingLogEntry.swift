@@ -3,8 +3,8 @@ import SwiftData
 
 @Model
 final class CookingLogEntry {
-    var date: Date
-    var rating: Int
+    var date: Date = Date.now
+    var rating: Int = 0
     var note: String?
     var recipe: Recipe?
 

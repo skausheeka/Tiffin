@@ -3,9 +3,9 @@ import SwiftData
 
 @Model
 final class MealPlanEntry {
-    var date: Date
+    var date: Date = Date.now
     var servings: Int?
-    var expectsLeftovers: Bool
+    var expectsLeftovers: Bool = false
     var recipe: Recipe?
 
     init(

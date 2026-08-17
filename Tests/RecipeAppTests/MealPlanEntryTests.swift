@@ -63,7 +63,7 @@ final class MealPlanEntryTests: XCTestCase {
         context.insert(entry)
         try context.save()
 
-        XCTAssertEqual(recipe.mealPlanEntries.count, 1)
-        XCTAssertTrue(recipe.mealPlanEntries.first === entry)
+        XCTAssertEqual(recipe.mealPlanEntries?.count, 1)
+        XCTAssertTrue(recipe.mealPlanEntries?.first === entry)
     }
 }
