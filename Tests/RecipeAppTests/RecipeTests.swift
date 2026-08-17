@@ -15,8 +15,8 @@ final class RecipeTests: XCTestCase {
         XCTAssertNil(recipe.servings)
         XCTAssertNil(recipe.sourceURL)
         XCTAssertNil(recipe.courseValue)
-        XCTAssertNil(recipe.rating)
         XCTAssertNil(recipe.note)
+        XCTAssertNil(recipe.averageRating)
         XCTAssertEqual(recipe.timesCooked, 0)
     }
 

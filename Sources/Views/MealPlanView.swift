@@ -74,5 +74,5 @@ struct MealPlanView: View {
 
 #Preview {
     MealPlanView()
-        .modelContainer(for: [Recipe.self, MealPlanEntry.self], inMemory: true)
+        .modelContainer(for: [Recipe.self, MealPlanEntry.self, CookingLogEntry.self], inMemory: true)
 }

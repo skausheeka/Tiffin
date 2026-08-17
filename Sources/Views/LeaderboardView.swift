@@ -75,10 +75,16 @@ private struct LeaderboardRow: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(AppColor.ink)
                 HStack(spacing: 4) {
-                    StarRatingView(rating: recipe.rating, size: 10, interactive: false)
-                    Text("· Cooked ×\(recipe.timesCooked)")
-                        .font(.caption2)
-                        .foregroundStyle(AppColor.inkMuted)
+                    StarRatingView(
+                        rating: recipe.averageRating.map { Int($0.rounded()) },
+                        size: 10,
+                        interactive: false
+                    )
+                    if let average = recipe.averageRating {
+                        Text(String(format: "%.1f · Cooked ×%d", average, recipe.timesCooked))
+                            .font(.caption2)
+                            .foregroundStyle(AppColor.inkMuted)
+                    }
                 }
             }
         }

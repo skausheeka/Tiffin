@@ -6,6 +6,7 @@ struct RecipeDetailView: View {
 
     @State private var isPresentingEdit = false
     @State private var isPresentingMealPlanAdd = false
+    @State private var isPresentingLogCook = false
 
     private var coverImage: UIImage? {
         guard let filename = recipe.coverPhotoFilename else { return nil }
@@ -66,15 +67,25 @@ struct RecipeDetailView: View {
                 }
 
                 HStack(spacing: 12) {
-                    StarRatingView(rating: recipe.rating, size: 20) { star in
-                        recipe.rating = (recipe.rating == star) ? nil : star
+                    if let average = recipe.averageRating {
+                        HStack(spacing: 6) {
+                            StarRatingView(rating: Int(average.rounded()), size: 18, interactive: false)
+                            Text(String(format: "%.1f · Cooked ×%d", average, recipe.timesCooked))
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(AppColor.inkMuted)
+                        }
+                    } else {
+                        Text("Not cooked yet")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(AppColor.inkMuted)
                     }
+
                     Button {
-                        recipe.timesCooked += 1
+                        isPresentingLogCook = true
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "plus.circle.fill")
-                            Text("Cooked ×\(recipe.timesCooked)")
+                            Text("Log a Cook")
                         }
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(AppColor.ink)
@@ -162,6 +173,9 @@ struct RecipeDetailView: View {
         }
         .sheet(isPresented: $isPresentingMealPlanAdd) {
             MealPlanEntryFormView(preselectedRecipe: recipe)
+        }
+        .sheet(isPresented: $isPresentingLogCook) {
+            CookingLogEntryFormView(preselectedRecipe: recipe)
         }
     }
 

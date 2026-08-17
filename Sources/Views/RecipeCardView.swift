@@ -70,11 +70,11 @@ struct RecipeCardView: View {
                     .offset(x: -6)
             }
 
-            if let rating = recipe.rating {
+            if let average = recipe.averageRating {
                 HStack(spacing: 3) {
                     Image(systemName: "star.fill")
                         .font(.system(size: 8))
-                    Text("\(rating)")
+                    Text(String(format: "%.1f", average))
                         .font(.caption2.weight(.bold))
                 }
                 .foregroundStyle(.white)

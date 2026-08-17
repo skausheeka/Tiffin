@@ -51,5 +51,5 @@ private struct PlaceholderTabView: View {
 
 #Preview {
     RootTabView()
-        .modelContainer(for: [Recipe.self, MealPlanEntry.self], inMemory: true)
+        .modelContainer(for: [Recipe.self, MealPlanEntry.self, CookingLogEntry.self], inMemory: true)
 }

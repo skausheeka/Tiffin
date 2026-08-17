@@ -7,6 +7,7 @@ struct RecipeListView: View {
 
     @State private var searchText = ""
     @State private var isPresentingAddRecipe = false
+    @State private var isPresentingLogCook = false
     @State private var path = NavigationPath()
 
     private let columns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
@@ -52,13 +53,27 @@ struct RecipeListView: View {
             .searchable(text: $searchText, prompt: "Search by title or tag")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button(action: { isPresentingAddRecipe = true }) {
-                        Label("Add Recipe", systemImage: "plus")
+                    Menu {
+                        Button {
+                            isPresentingAddRecipe = true
+                        } label: {
+                            Label("New Recipe", systemImage: "fork.knife")
+                        }
+                        Button {
+                            isPresentingLogCook = true
+                        } label: {
+                            Label("Log a Cook", systemImage: "star")
+                        }
+                    } label: {
+                        Label("Add", systemImage: "plus")
                     }
                 }
             }
             .sheet(isPresented: $isPresentingAddRecipe) {
                 AddRecipeView()
+            }
+            .sheet(isPresented: $isPresentingLogCook) {
+                CookingLogEntryFormView()
             }
             .overlay {
                 if recipes.isEmpty {
