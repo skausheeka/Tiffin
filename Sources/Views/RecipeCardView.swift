@@ -42,11 +42,7 @@ struct RecipeCardView: View {
                             .resizable()
                             .scaledToFill()
                     } else {
-                        LinearGradient(
-                            colors: [AppColor.accentSoft, AppColor.tertiarySoft],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
+                        RecipePlaceholderView()
                     }
                 }
                 .frame(width: proxy.size.width, height: proxy.size.height)

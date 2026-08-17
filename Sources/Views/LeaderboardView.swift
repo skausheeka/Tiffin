@@ -60,11 +60,7 @@ private struct LeaderboardRow: View {
                         .resizable()
                         .scaledToFill()
                 } else {
-                    LinearGradient(
-                        colors: [AppColor.accentSoft, AppColor.tertiarySoft],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
+                    RecipePlaceholderView(glyphSize: 22)
                 }
             }
             .frame(width: 44, height: 44)
