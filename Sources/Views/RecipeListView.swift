@@ -8,16 +8,24 @@ struct RecipeListView: View {
     @State private var searchText = ""
     @State private var isPresentingAddRecipe = false
     @State private var isPresentingLogCook = false
+    @State private var isPresentingFilters = false
+    @State private var recipeFilter = RecipeFilter()
     @State private var path = NavigationPath()
 
     private let columns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
 
     private var filteredRecipes: [Recipe] {
-        guard !searchText.isEmpty else { return recipes }
-        return recipes.filter {
-            $0.title.localizedCaseInsensitiveContains(searchText)
-                || $0.tags.contains { $0.localizedCaseInsensitiveContains(searchText) }
-        }
+        recipes
+            .filter { recipe in
+                searchText.isEmpty
+                    || recipe.title.localizedCaseInsensitiveContains(searchText)
+                    || recipe.tags.contains { $0.localizedCaseInsensitiveContains(searchText) }
+            }
+            .filter(recipeFilter.matches)
+    }
+
+    private var availableCuisines: [String] {
+        Array(Set(recipes.compactMap(\.tags.first))).sorted()
     }
 
     var body: some View {
@@ -53,6 +61,15 @@ struct RecipeListView: View {
             .searchable(text: $searchText, prompt: "Search by title or tag")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        isPresentingFilters = true
+                    } label: {
+                        Image(systemName: recipeFilter.isActive
+                            ? "line.3.horizontal.decrease.circle.fill"
+                            : "line.3.horizontal.decrease.circle")
+                    }
+                }
+                ToolbarItem(placement: .primaryAction) {
                     Menu {
                         Button {
                             isPresentingAddRecipe = true
@@ -75,12 +92,21 @@ struct RecipeListView: View {
             .sheet(isPresented: $isPresentingLogCook) {
                 CookingLogEntryFormView()
             }
+            .sheet(isPresented: $isPresentingFilters) {
+                RecipeFilterView(filter: $recipeFilter, availableCuisines: availableCuisines)
+            }
             .overlay {
                 if recipes.isEmpty {
                     ContentUnavailableView(
                         "No Recipes Yet",
                         systemImage: "fork.knife",
                         description: Text("Tap + to add your first recipe.")
+                    )
+                } else if filteredRecipes.isEmpty {
+                    ContentUnavailableView(
+                        "No Matches",
+                        systemImage: "line.3.horizontal.decrease.circle",
+                        description: Text("Try adjusting or clearing your filters.")
                     )
                 }
             }

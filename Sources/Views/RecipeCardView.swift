@@ -112,6 +112,24 @@ struct RecipeCardView: View {
                 }
                 .font(.caption2)
                 .foregroundStyle(.white.opacity(0.9))
+
+                if recipe.servings != nil || recipe.timesCooked > 0 {
+                    HStack(spacing: 4) {
+                        if let servings = recipe.servings {
+                            Image(systemName: "person.2.fill")
+                                .font(.system(size: 8))
+                            Text("Serves \(servings)")
+                            if recipe.timesCooked > 0 { Text("·") }
+                        }
+                        if recipe.timesCooked > 0 {
+                            Image(systemName: "repeat")
+                                .font(.system(size: 8))
+                            Text("Cooked ×\(recipe.timesCooked)")
+                        }
+                    }
+                    .font(.caption2)
+                    .foregroundStyle(.white.opacity(0.75))
+                }
             }
             .padding(10)
             .frame(maxWidth: .infinity, alignment: .leading)
