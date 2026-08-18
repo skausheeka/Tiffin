@@ -1,12 +1,17 @@
+import SwiftData
 import SwiftUI
 import UIKit
 
 struct RecipeDetailView: View {
     let recipe: Recipe
 
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+
     @State private var isPresentingEdit = false
     @State private var isPresentingMealPlanAdd = false
     @State private var isPresentingLogCook = false
+    @State private var isPresentingDeleteConfirmation = false
 
     private var coverImage: UIImage? {
         guard let filename = recipe.coverPhotoFilename else { return nil }
@@ -161,10 +166,19 @@ struct RecipeDetailView: View {
                 }
             }
             ToolbarItem(placement: .primaryAction) {
-                Button {
-                    isPresentingEdit = true
+                Menu {
+                    Button {
+                        isPresentingEdit = true
+                    } label: {
+                        Label("Edit", systemImage: "pencil")
+                    }
+                    Button(role: .destructive) {
+                        isPresentingDeleteConfirmation = true
+                    } label: {
+                        Label("Delete Recipe", systemImage: "trash")
+                    }
                 } label: {
-                    Label("Edit", systemImage: "pencil")
+                    Label("More", systemImage: "ellipsis.circle")
                 }
             }
         }
@@ -177,6 +191,20 @@ struct RecipeDetailView: View {
         .sheet(isPresented: $isPresentingLogCook) {
             CookingLogEntryFormView(preselectedRecipe: recipe)
         }
+        .alert("Delete Recipe?", isPresented: $isPresentingDeleteConfirmation) {
+            Button("Delete", role: .destructive, action: deleteRecipe)
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This can't be undone.")
+        }
+    }
+
+    private func deleteRecipe() {
+        for filename in recipe.photoFilenames {
+            PhotoStore.delete(filename)
+        }
+        modelContext.delete(recipe)
+        dismiss()
     }
 
     private func ingredientLine(_ ingredient: IngredientEntry) -> String {

@@ -13,9 +13,14 @@ struct AddRecipeView: View {
         case prepTime, cookTime, servings, sourceURL
     }
 
+    private enum ValidationIssue: Hashable {
+        case title, ingredients, steps
+    }
+
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @FocusState private var focusedField: Field?
+    @State private var validationIssues: Set<ValidationIssue> = []
 
     private let existingRecipe: Recipe?
     private let isImportedPrefill: Bool
@@ -67,6 +72,14 @@ struct AddRecipeView: View {
             Form {
                 Section("Title") {
                     TextField("Recipe title", text: $title)
+                        .onChange(of: title) { _, newValue in
+                            if !newValue.trimmingCharacters(in: .whitespaces).isEmpty {
+                                validationIssues.remove(.title)
+                            }
+                        }
+                    if validationIssues.contains(.title) {
+                        validationMessage("Title is required")
+                    }
                 }
                 Section("Photo") {
                     PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
@@ -144,6 +157,14 @@ struct AddRecipeView: View {
                     } label: {
                         Label("Add Ingredient", systemImage: "plus.circle")
                     }
+                    if validationIssues.contains(.ingredients) {
+                        validationMessage("Add at least one ingredient")
+                    }
+                }
+                .onChange(of: ingredientRows) { _, newValue in
+                    if validationIssues.contains(.ingredients), !Recipe.cleanIngredients(newValue).isEmpty {
+                        validationIssues.remove(.ingredients)
+                    }
                 }
                 Section("Instructions") {
                     ForEach(Array(steps.enumerated()), id: \.element.id) { index, _ in
@@ -168,6 +189,14 @@ struct AddRecipeView: View {
                         steps.append(StepEntry(text: ""))
                     } label: {
                         Label("Add Step", systemImage: "plus.circle")
+                    }
+                    if validationIssues.contains(.steps) {
+                        validationMessage("Add at least one instruction step")
+                    }
+                }
+                .onChange(of: steps) { _, newValue in
+                    if validationIssues.contains(.steps), !Recipe.cleanSteps(newValue.map(\.text)).isEmpty {
+                        validationIssues.remove(.steps)
                     }
                 }
                 Section("Details") {
@@ -236,10 +265,16 @@ struct AddRecipeView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", action: save)
-                        .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private func validationMessage(_ text: String) -> some View {
+        Label(text, systemImage: "exclamationmark.circle.fill")
+            .font(.caption)
+            .foregroundStyle(.red)
     }
 
     private func commitTag() {
@@ -252,14 +287,26 @@ struct AddRecipeView: View {
     private func save() {
         commitTag()
 
+        let trimmedTitle = title.trimmingCharacters(in: .whitespaces)
         let ingredients = Recipe.cleanIngredients(ingredientRows)
         let instructionSteps = Recipe.cleanSteps(steps.map(\.text))
+
+        var issues: Set<ValidationIssue> = []
+        if trimmedTitle.isEmpty { issues.insert(.title) }
+        if ingredients.isEmpty { issues.insert(.ingredients) }
+        if instructionSteps.isEmpty { issues.insert(.steps) }
+
+        guard issues.isEmpty else {
+            validationIssues = issues
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            return
+        }
 
         let sourceURL = sourceURLText.trimmingCharacters(in: .whitespaces)
         let note = noteText.trimmingCharacters(in: .whitespaces)
 
         if let existingRecipe {
-            existingRecipe.title = title.trimmingCharacters(in: .whitespaces)
+            existingRecipe.title = trimmedTitle
             existingRecipe.ingredients = ingredients
             existingRecipe.instructionSteps = instructionSteps
             existingRecipe.tags = tags
@@ -287,7 +334,7 @@ struct AddRecipeView: View {
             }
 
             let recipe = Recipe(
-                title: title.trimmingCharacters(in: .whitespaces),
+                title: trimmedTitle,
                 ingredients: ingredients,
                 instructionSteps: instructionSteps,
                 tags: tags,

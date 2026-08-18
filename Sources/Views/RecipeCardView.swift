@@ -19,7 +19,6 @@ private struct RibbonShape: Shape {
 /// "Full-Bleed" recipe card — photo fills the card, title/meta sit on a bottom scrim.
 struct RecipeCardView: View {
     let recipe: Recipe
-    var onTapTag: (String) -> Void
 
     private var coverImage: UIImage? {
         guard let filename = recipe.coverPhotoFilename else { return nil }
@@ -30,8 +29,6 @@ struct RecipeCardView: View {
         let total = (recipe.prepTimeMinutes ?? 0) + (recipe.cookTimeMinutes ?? 0)
         return total > 0 ? "\(total) min" : nil
     }
-
-    private var primaryTag: String? { recipe.tags.first }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -89,25 +86,15 @@ struct RecipeCardView: View {
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
 
-                HStack(spacing: 4) {
-                    if let timeText {
+                if let timeText {
+                    HStack(spacing: 4) {
                         Image(systemName: "clock")
                             .font(.system(size: 9))
                         Text(timeText)
-                        if primaryTag != nil { Text("·") }
                     }
-                    if let primaryTag {
-                        Button {
-                            onTapTag(primaryTag)
-                        } label: {
-                            Text(primaryTag)
-                                .underline()
-                        }
-                        .buttonStyle(.plain)
-                    }
+                    .font(.caption2)
+                    .foregroundStyle(.white.opacity(0.9))
                 }
-                .font(.caption2)
-                .foregroundStyle(.white.opacity(0.9))
 
                 if recipe.servings != nil || recipe.timesCooked > 0 {
                     HStack(spacing: 4) {

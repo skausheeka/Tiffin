@@ -9,6 +9,7 @@ struct RecipeListView: View {
     @State private var isPresentingFilters = false
     @State private var recipeFilter = RecipeFilter()
     @State private var path = NavigationPath()
+    @State private var recipePendingDelete: Recipe?
 
     private let columns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
 
@@ -32,14 +33,12 @@ struct RecipeListView: View {
                 LazyVGrid(columns: columns, spacing: 10) {
                     ForEach(filteredRecipes) { recipe in
                         NavigationLink(value: recipe) {
-                            RecipeCardView(recipe: recipe) { tag in
-                                path.append(TagFilter(tag: tag))
-                            }
+                            RecipeCardView(recipe: recipe)
                         }
                         .buttonStyle(.plain)
                         .contextMenu {
                             Button(role: .destructive) {
-                                delete(recipe)
+                                recipePendingDelete = recipe
                             } label: {
                                 Label("Delete", systemImage: "trash")
                             }
@@ -73,6 +72,23 @@ struct RecipeListView: View {
             }
             .sheet(isPresented: $isPresentingFilters) {
                 RecipeFilterView(filter: $recipeFilter, availableCuisines: availableCuisines)
+            }
+            .alert(
+                "Delete Recipe?",
+                isPresented: Binding(
+                    get: { recipePendingDelete != nil },
+                    set: { if !$0 { recipePendingDelete = nil } }
+                )
+            ) {
+                Button("Delete", role: .destructive) {
+                    if let recipe = recipePendingDelete { delete(recipe) }
+                    recipePendingDelete = nil
+                }
+                Button("Cancel", role: .cancel) {
+                    recipePendingDelete = nil
+                }
+            } message: {
+                Text("This can't be undone.")
             }
             .overlay {
                 if recipes.isEmpty {
