@@ -3,6 +3,9 @@ options:
   bundleIdPrefix: com.srinathk
   deploymentTarget:
     iOS: "18.4"
+configFiles:
+  Debug: Config/Secrets.xcconfig
+  Release: Config/Secrets.xcconfig
 targets:
   RecipeApp:
     type: application
@@ -23,6 +26,8 @@ targets:
         CFBundleDisplayName: Tiffin
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        NSCameraUsageDescription: Tiffin uses your camera to photograph handwritten or printed recipes for import.
+        ANTHROPIC_API_KEY: $(ANTHROPIC_API_KEY)
     entitlements:
       path: Sources/RecipeApp.entitlements
       properties:

@@ -18,11 +18,13 @@ struct AddRecipeView: View {
     @FocusState private var focusedField: Field?
 
     private let existingRecipe: Recipe?
+    private let isImportedPrefill: Bool
 
     @State private var title: String
     @State private var ingredientRows: [IngredientEntry]
     @State private var steps: [StepEntry]
-    @State private var tagsText: String
+    @State private var tags: [String]
+    @State private var newTagText = ""
     @State private var prepTimeText: String
     @State private var cookTimeText: String
     @State private var servingsText: String
@@ -35,19 +37,22 @@ struct AddRecipeView: View {
     @State private var didChangePhoto = false
     @State private var customUnitRowIDs: Set<UUID> = []
 
-    init(existingRecipe: Recipe? = nil) {
+    init(existingRecipe: Recipe? = nil, prefill: ParsedRecipeDraft? = nil) {
         self.existingRecipe = existingRecipe
-        _title = State(initialValue: existingRecipe?.title ?? "")
-        _ingredientRows = State(initialValue: existingRecipe?.ingredients.isEmpty == false ? existingRecipe!.ingredients : [IngredientEntry()])
-        let existingSteps = existingRecipe?.instructionSteps.map { StepEntry(text: $0) } ?? []
+        self.isImportedPrefill = existingRecipe == nil && prefill != nil
+        _title = State(initialValue: existingRecipe?.title ?? prefill?.title ?? "")
+        let ingredientSource = existingRecipe?.ingredients ?? prefill?.ingredients ?? []
+        _ingredientRows = State(initialValue: ingredientSource.isEmpty ? [IngredientEntry()] : ingredientSource)
+        let stepsSource = existingRecipe?.instructionSteps ?? prefill?.steps ?? []
+        let existingSteps = stepsSource.map { StepEntry(text: $0) }
         _steps = State(initialValue: existingSteps.isEmpty ? [StepEntry(text: "")] : existingSteps)
-        _tagsText = State(initialValue: existingRecipe?.tags.joined(separator: ", ") ?? "")
-        _prepTimeText = State(initialValue: existingRecipe?.prepTimeMinutes.map(String.init) ?? "")
-        _cookTimeText = State(initialValue: existingRecipe?.cookTimeMinutes.map(String.init) ?? "")
-        _servingsText = State(initialValue: existingRecipe?.servings.map(String.init) ?? "")
-        _sourceURLText = State(initialValue: existingRecipe?.sourceURL ?? "")
+        _tags = State(initialValue: existingRecipe?.tags ?? prefill?.tags ?? [])
+        _prepTimeText = State(initialValue: (existingRecipe?.prepTimeMinutes ?? prefill?.prepTimeMinutes).map(String.init) ?? "")
+        _cookTimeText = State(initialValue: (existingRecipe?.cookTimeMinutes ?? prefill?.cookTimeMinutes).map(String.init) ?? "")
+        _servingsText = State(initialValue: (existingRecipe?.servings ?? prefill?.servings).map(String.init) ?? "")
+        _sourceURLText = State(initialValue: existingRecipe?.sourceURL ?? prefill?.sourceURL ?? "")
         _noteText = State(initialValue: existingRecipe?.note ?? "")
-        _selectedCourse = State(initialValue: existingRecipe?.courseValue)
+        _selectedCourse = State(initialValue: existingRecipe?.courseValue ?? prefill?.course)
 
         if let filename = existingRecipe?.coverPhotoFilename,
            let data = try? Data(contentsOf: PhotoStore.url(for: filename)) {
@@ -196,7 +201,25 @@ struct AddRecipeView: View {
                         .onSubmit { focusedField = nil }
                 }
                 Section("Tags") {
-                    TextField("Comma separated, e.g. dinner, pasta", text: $tagsText)
+                    ForEach(tags, id: \.self) { tag in
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(AppColor.inkMuted)
+                                .frame(width: 5, height: 5)
+                            Text(tag)
+                            Spacer()
+                            Button(role: .destructive) {
+                                tags.removeAll { $0 == tag }
+                            } label: {
+                                Image(systemName: "minus.circle.fill")
+                                    .foregroundStyle(.red)
+                            }
+                            .buttonStyle(.borderless)
+                        }
+                    }
+                    TextField("Add a tag, e.g. dinner", text: $newTagText)
+                        .submitLabel(.done)
+                        .onSubmit(commitTag)
                 }
                 Section("Notes") {
                     TextField("e.g. add more salt next time", text: $noteText, axis: .vertical)
@@ -206,7 +229,7 @@ struct AddRecipeView: View {
             .scrollDismissesKeyboard(.interactively)
             .scrollContentBackground(.hidden)
             .background(AppColor.background)
-            .navigationTitle(existingRecipe == nil ? "New Recipe" : "Edit Recipe")
+            .navigationTitle(existingRecipe != nil ? "Edit Recipe" : (isImportedPrefill ? "Review Imported Recipe" : "New Recipe"))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -219,10 +242,18 @@ struct AddRecipeView: View {
         }
     }
 
+    private func commitTag() {
+        let trimmed = newTagText.trimmingCharacters(in: .whitespaces)
+        newTagText = ""
+        guard !trimmed.isEmpty, !tags.contains(where: { $0.caseInsensitiveCompare(trimmed) == .orderedSame }) else { return }
+        tags.append(trimmed)
+    }
+
     private func save() {
+        commitTag()
+
         let ingredients = Recipe.cleanIngredients(ingredientRows)
         let instructionSteps = Recipe.cleanSteps(steps.map(\.text))
-        let tags = Recipe.parseTags(tagsText)
 
         let sourceURL = sourceURLText.trimmingCharacters(in: .whitespaces)
         let note = noteText.trimmingCharacters(in: .whitespaces)

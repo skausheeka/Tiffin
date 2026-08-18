@@ -45,6 +45,11 @@ private struct PlaceholderTabView: View {
             ContentUnavailableView(title, systemImage: systemImage, description: Text("Coming in a later phase."))
                 .navigationTitle(title)
                 .background(AppColor.background)
+                .toolbar {
+                    ToolbarItem(placement: .primaryAction) {
+                        GlobalAddMenu()
+                    }
+                }
         }
     }
 }

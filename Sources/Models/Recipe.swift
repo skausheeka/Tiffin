@@ -97,12 +97,4 @@ final class Recipe {
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
     }
-
-    /// Splits comma-separated tag input, trimming whitespace and dropping empty entries.
-    static func parseTags(_ text: String) -> [String] {
-        text
-            .split(separator: ",")
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
-    }
 }

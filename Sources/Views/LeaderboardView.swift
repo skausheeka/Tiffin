@@ -22,6 +22,11 @@ struct LeaderboardView: View {
             .scrollContentBackground(.hidden)
             .background(AppColor.background)
             .navigationTitle("Leaderboard")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    GlobalAddMenu()
+                }
+            }
             .navigationDestination(for: Recipe.self) { recipe in
                 RecipeDetailView(recipe: recipe)
             }

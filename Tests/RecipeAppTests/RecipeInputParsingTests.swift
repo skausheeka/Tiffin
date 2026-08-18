@@ -47,26 +47,4 @@ final class RecipeInputParsingTests: XCTestCase {
     func test_cleanSteps_emptyInput_producesEmptyOutput() {
         XCTAssertEqual(Recipe.cleanSteps([]), [])
     }
-
-    // MARK: - parseTags
-
-    func test_parseTags_splitsOnCommaAndTrims() {
-        XCTAssertEqual(Recipe.parseTags("dinner, pasta ,  quick"), ["dinner", "pasta", "quick"])
-    }
-
-    func test_parseTags_dropsEmptyEntriesFromDoubleCommas() {
-        XCTAssertEqual(Recipe.parseTags("dinner,,pasta"), ["dinner", "pasta"])
-    }
-
-    func test_parseTags_emptyString_producesEmptyArray() {
-        XCTAssertEqual(Recipe.parseTags(""), [])
-    }
-
-    func test_parseTags_singleTagNoComma() {
-        XCTAssertEqual(Recipe.parseTags("dinner"), ["dinner"])
-    }
-
-    func test_parseTags_whitespaceOnly_producesEmptyArray() {
-        XCTAssertEqual(Recipe.parseTags("   "), [])
-    }
 }

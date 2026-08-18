@@ -6,8 +6,6 @@ struct RecipeListView: View {
     @Query(sort: \Recipe.createdAt, order: .reverse) private var recipes: [Recipe]
 
     @State private var searchText = ""
-    @State private var isPresentingAddRecipe = false
-    @State private var isPresentingLogCook = false
     @State private var isPresentingFilters = false
     @State private var recipeFilter = RecipeFilter()
     @State private var path = NavigationPath()
@@ -70,27 +68,8 @@ struct RecipeListView: View {
                     }
                 }
                 ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        Button {
-                            isPresentingAddRecipe = true
-                        } label: {
-                            Label("New Recipe", systemImage: "fork.knife")
-                        }
-                        Button {
-                            isPresentingLogCook = true
-                        } label: {
-                            Label("Log a Cook", systemImage: "star")
-                        }
-                    } label: {
-                        Label("Add", systemImage: "plus")
-                    }
+                    GlobalAddMenu()
                 }
-            }
-            .sheet(isPresented: $isPresentingAddRecipe) {
-                AddRecipeView()
-            }
-            .sheet(isPresented: $isPresentingLogCook) {
-                CookingLogEntryFormView()
             }
             .sheet(isPresented: $isPresentingFilters) {
                 RecipeFilterView(filter: $recipeFilter, availableCuisines: availableCuisines)

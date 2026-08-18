@@ -2,7 +2,6 @@ import SwiftUI
 
 struct MealPlanView: View {
     @State private var selectedDate = Calendar.current.startOfDay(for: .now)
-    @State private var isPresentingAdd = false
 
     private var dateLabel: String {
         if Calendar.current.isDateInToday(selectedDate) {
@@ -54,15 +53,8 @@ struct MealPlanView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        isPresentingAdd = true
-                    } label: {
-                        Label("Add Meal", systemImage: "plus")
-                    }
+                    GlobalAddMenu()
                 }
-            }
-            .sheet(isPresented: $isPresentingAdd) {
-                MealPlanEntryFormView(initialDate: selectedDate)
             }
         }
     }

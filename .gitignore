@@ -23,3 +23,6 @@ Pods/
 
 # Claude Code local config — machine-local, not meant to be shared via git
 .claude/
+
+# Anthropic API key for AI recipe import — user-supplied locally, never committed
+Config/Secrets.xcconfig
