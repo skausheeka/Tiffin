@@ -35,6 +35,36 @@ final class CookingLogEntryTests: XCTestCase {
         XCTAssertEqual(entry.note, "too salty")
     }
 
+    func test_init_defaultsPhotoFilenameToNil() {
+        let recipe = Recipe(title: "Dal")
+        let entry = CookingLogEntry(rating: 4, recipe: recipe)
+
+        XCTAssertNil(entry.photoFilename)
+    }
+
+    func test_init_acceptsExplicitPhotoFilename() {
+        let recipe = Recipe(title: "Dal")
+        let entry = CookingLogEntry(rating: 4, photoFilename: "abc.jpg", recipe: recipe)
+
+        XCTAssertEqual(entry.photoFilename, "abc.jpg")
+    }
+
+    func test_init_defaultsTimesToNil() {
+        let recipe = Recipe(title: "Dal")
+        let entry = CookingLogEntry(rating: 4, recipe: recipe)
+
+        XCTAssertNil(entry.prepTimeMinutes)
+        XCTAssertNil(entry.cookTimeMinutes)
+    }
+
+    func test_init_acceptsExplicitTimes() {
+        let recipe = Recipe(title: "Dal")
+        let entry = CookingLogEntry(rating: 4, prepTimeMinutes: 15, cookTimeMinutes: 30, recipe: recipe)
+
+        XCTAssertEqual(entry.prepTimeMinutes, 15)
+        XCTAssertEqual(entry.cookTimeMinutes, 30)
+    }
+
     func test_deletingRecipe_cascadesToItsCookingLogEntries() throws {
         let recipe = Recipe(title: "Dal")
         context.insert(recipe)
