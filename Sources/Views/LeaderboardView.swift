@@ -28,7 +28,10 @@ struct LeaderboardView: View {
                 }
             }
             .navigationDestination(for: Recipe.self) { recipe in
-                RecipeDetailView(recipe: recipe)
+                RecipePerformanceView(recipe: recipe)
+            }
+            .navigationDestination(for: RecipeDetailDestination.self) { destination in
+                RecipeDetailView(recipe: destination.recipe)
             }
             .overlay {
                 if rankedRecipes.isEmpty {
