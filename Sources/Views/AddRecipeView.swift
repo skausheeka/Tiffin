@@ -37,9 +37,9 @@ struct AddRecipeView: View {
     @State private var noteText: String
     @State private var selectedCourse: RecipeCourse?
 
-    @State private var selectedPhotoItem: PhotosPickerItem?
-    @State private var selectedPhotoData: Data?
-    @State private var didChangePhoto = false
+    @State private var selectedPhotoItems: [PhotosPickerItem] = []
+    @State private var photoDatas: [Data] = []
+    @State private var didChangePhotos = false
     @State private var customUnitRowIDs: Set<UUID> = []
 
     init(existingRecipe: Recipe? = nil, prefill: ParsedRecipeDraft? = nil) {
@@ -59,12 +59,10 @@ struct AddRecipeView: View {
         _noteText = State(initialValue: existingRecipe?.note ?? "")
         _selectedCourse = State(initialValue: existingRecipe?.courseValue ?? prefill?.course)
 
-        if let filename = existingRecipe?.coverPhotoFilename,
-           let data = try? Data(contentsOf: PhotoStore.url(for: filename)) {
-            _selectedPhotoData = State(initialValue: data)
-        } else {
-            _selectedPhotoData = State(initialValue: nil)
+        let existingPhotoDatas = (existingRecipe?.photoFilenames ?? []).compactMap { filename in
+            try? Data(contentsOf: PhotoStore.url(for: filename))
         }
+        _photoDatas = State(initialValue: existingPhotoDatas)
     }
 
     var body: some View {
@@ -81,24 +79,47 @@ struct AddRecipeView: View {
                         validationMessage("Title is required")
                     }
                 }
-                Section("Photo") {
-                    PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                        if let selectedPhotoData, let uiImage = UIImage(data: selectedPhotoData) {
-                            Image(uiImage: uiImage)
-                                .resizable()
-                                .scaledToFill()
-                                .frame(height: 180)
-                                .frame(maxWidth: .infinity)
-                                .clipped()
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                        } else {
-                            Label("Add a cover photo", systemImage: "photo")
+                Section("Photos") {
+                    if !photoDatas.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(Array(photoDatas.enumerated()), id: \.offset) { index, data in
+                                    ZStack(alignment: .topTrailing) {
+                                        if let uiImage = UIImage(data: data) {
+                                            Image(uiImage: uiImage)
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: 100, height: 100)
+                                                .clipped()
+                                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                        }
+                                        Button {
+                                            photoDatas.remove(at: index)
+                                            didChangePhotos = true
+                                        } label: {
+                                            Image(systemName: "xmark.circle.fill")
+                                                .symbolRenderingMode(.palette)
+                                                .foregroundStyle(.white, .black.opacity(0.6))
+                                        }
+                                        .padding(4)
+                                    }
+                                }
+                            }
+                            .padding(.vertical, 4)
                         }
                     }
-                    .onChange(of: selectedPhotoItem) {
+                    PhotosPicker(selection: $selectedPhotoItems, matching: .images) {
+                        Label(photoDatas.isEmpty ? "Add photos" : "Add more photos", systemImage: "photo.on.rectangle.angled")
+                    }
+                    .onChange(of: selectedPhotoItems) {
                         Task {
-                            didChangePhoto = true
-                            selectedPhotoData = try? await selectedPhotoItem?.loadTransferable(type: Data.self)
+                            for item in selectedPhotoItems {
+                                if let data = try? await item.loadTransferable(type: Data.self) {
+                                    photoDatas.append(data)
+                                }
+                            }
+                            selectedPhotoItems = []
+                            didChangePhotos = true
                         }
                     }
                 }
@@ -317,21 +338,14 @@ struct AddRecipeView: View {
             existingRecipe.course = selectedCourse?.rawValue
             existingRecipe.note = note.isEmpty ? nil : note
 
-            if didChangePhoto {
+            if didChangePhotos {
                 for filename in existingRecipe.photoFilenames {
                     PhotoStore.delete(filename)
                 }
-                if let selectedPhotoData, let filename = PhotoStore.save(selectedPhotoData) {
-                    existingRecipe.photoFilenames = [filename]
-                } else {
-                    existingRecipe.photoFilenames = []
-                }
+                existingRecipe.photoFilenames = photoDatas.compactMap { PhotoStore.save($0) }
             }
         } else {
-            var photoFilenames: [String] = []
-            if let selectedPhotoData, let filename = PhotoStore.save(selectedPhotoData) {
-                photoFilenames.append(filename)
-            }
+            let photoFilenames = photoDatas.compactMap { PhotoStore.save($0) }
 
             let recipe = Recipe(
                 title: trimmedTitle,

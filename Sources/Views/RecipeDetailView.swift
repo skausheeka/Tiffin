@@ -13,9 +13,8 @@ struct RecipeDetailView: View {
     @State private var isPresentingLogCook = false
     @State private var isPresentingDeleteConfirmation = false
 
-    private var coverImage: UIImage? {
-        guard let filename = recipe.coverPhotoFilename else { return nil }
-        return UIImage(contentsOfFile: PhotoStore.url(for: filename).path)
+    private var images: [UIImage] {
+        recipe.photoFilenames.compactMap { UIImage(contentsOfFile: PhotoStore.url(for: $0).path) }
     }
 
     private var metaLine: String? {
@@ -29,14 +28,19 @@ struct RecipeDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                if let coverImage {
-                    Image(uiImage: coverImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(height: 220)
-                        .frame(maxWidth: .infinity)
-                        .clipped()
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                if !images.isEmpty {
+                    TabView {
+                        ForEach(Array(images.enumerated()), id: \.offset) { _, image in
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFill()
+                        }
+                    }
+                    .tabViewStyle(.page(indexDisplayMode: images.count > 1 ? .automatic : .never))
+                    .frame(height: 220)
+                    .frame(maxWidth: .infinity)
+                    .clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
 
                 if let course = recipe.courseValue {
