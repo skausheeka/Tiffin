@@ -725,13 +725,15 @@ enum IngredientUnitSuggestions {
         "turbinado sugar": "cup",
     ]
 
-    /// Every distinct unit used in the suggestions table, common ones first, for use in a picker.
+    /// Every distinct unit used in the suggestions table, common ones first, plus a few
+    /// common informal units (like "handful") that don't map to any single ingredient —
+    /// used as the general fallback suggestion list.
     static let allUnits: [String] = {
         let priority = [
             "cup", "tbsp", "tsp", "lb", "oz", "whole", "clove", "pinch",
-            "sprig", "head", "ear", "can", "in", "loaf", "bunch", "stalk",
+            "sprig", "head", "ear", "can", "in", "loaf", "bunch", "stalk", "handful",
         ]
-        let known = Set(table.values)
+        let known = Set(table.values).union(["handful"])
         let ordered = priority.filter { known.contains($0) }
         let remaining = known.subtracting(priority).sorted()
         return ordered + remaining
@@ -747,5 +749,24 @@ enum IngredientUnitSuggestions {
 
         let matches = table.keys.filter { name.contains($0) }
         return matches.max(by: { $0.count < $1.count }).flatMap { table[$0] }
+    }
+
+    /// Several relevant unit suggestions, most relevant first — never a closed set, just
+    /// a shortcut. The ingredient's own best-guess unit (if any) leads, followed by the
+    /// general common-units list, filtered by whatever's already typed in the unit field.
+    /// The same ingredient can reasonably be measured different ways (cilantro by the
+    /// cup, the handful, or the bunch), so this offers options instead of forcing one.
+    static func suggestions(forIngredient ingredientName: String, matching query: String) -> [String] {
+        var ranked: [String] = []
+        if let guess = suggestedUnit(for: ingredientName) {
+            ranked.append(guess)
+        }
+        for unit in allUnits where !ranked.contains(unit) {
+            ranked.append(unit)
+        }
+
+        let trimmedQuery = query.trimmingCharacters(in: .whitespaces)
+        guard !trimmedQuery.isEmpty else { return ranked }
+        return ranked.filter { $0.localizedCaseInsensitiveContains(trimmedQuery) }
     }
 }

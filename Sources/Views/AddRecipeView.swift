@@ -17,6 +17,7 @@ private struct TagTypoSuggestion: Identifiable {
 struct AddRecipeView: View {
     private enum Field: Hashable {
         case prepTime, cookTime, servings, sourceURL, tag
+        case unit(UUID)
     }
 
     private enum ValidationIssue: Hashable {
@@ -48,7 +49,6 @@ struct AddRecipeView: View {
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
     @State private var photoDatas: [Data] = []
     @State private var didChangePhotos = false
-    @State private var customUnitRowIDs: Set<UUID> = []
 
     init(existingRecipe: Recipe? = nil, prefill: ParsedRecipeDraft? = nil) {
         self.existingRecipe = existingRecipe
@@ -156,51 +156,55 @@ struct AddRecipeView: View {
                 }
                 Section("Ingredients") {
                     ForEach($ingredientRows) { $row in
-                        HStack(spacing: 8) {
-                            TextField("Amt", value: $row.amount, format: .number)
-                                .keyboardType(.decimalPad)
-                                .frame(width: 50)
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(spacing: 8) {
+                                TextField("Amt", value: $row.amount, format: .number)
+                                    .keyboardType(.decimalPad)
+                                    .frame(width: 50)
 
-                            if customUnitRowIDs.contains(row.id) {
                                 TextField("Unit", text: $row.unit)
                                     .frame(width: 70)
-                                    .onChange(of: row.unit) { _, newValue in
-                                        if newValue.isEmpty {
-                                            customUnitRowIDs.remove(row.id)
+                                    .focused($focusedField, equals: .unit(row.id))
+
+                                TextField("Ingredient", text: $row.name)
+                                    .onChange(of: row.name) { _, newValue in
+                                        if row.unit.isEmpty, let suggestion = IngredientUnitSuggestions.suggestedUnit(for: newValue) {
+                                            row.unit = suggestion
                                         }
                                     }
-                            } else {
-                                Menu {
-                                    ForEach(IngredientUnitSuggestions.allUnits, id: \.self) { unit in
-                                        Button(unit) { row.unit = unit }
+                                if ingredientRows.count > 1 {
+                                    Button(role: .destructive) {
+                                        ingredientRows.removeAll { $0.id == row.id }
+                                    } label: {
+                                        Image(systemName: "minus.circle.fill")
+                                            .foregroundStyle(.red)
                                     }
-                                    Divider()
-                                    Button("Other…") {
-                                        row.unit = ""
-                                        customUnitRowIDs.insert(row.id)
-                                    }
-                                } label: {
-                                    Text(row.unit.isEmpty ? "Unit" : row.unit)
-                                        .foregroundStyle(row.unit.isEmpty ? AppColor.inkMuted : AppColor.ink)
-                                        .frame(width: 70, alignment: .leading)
+                                    .buttonStyle(.borderless)
                                 }
                             }
 
-                            TextField("Ingredient", text: $row.name)
-                                .onChange(of: row.name) { _, newValue in
-                                    if row.unit.isEmpty, let suggestion = IngredientUnitSuggestions.suggestedUnit(for: newValue) {
-                                        row.unit = suggestion
+                            if focusedField == .unit(row.id) {
+                                let suggestions = IngredientUnitSuggestions.suggestions(forIngredient: row.name, matching: row.unit)
+                                if !suggestions.isEmpty {
+                                    ScrollView(.horizontal, showsIndicators: false) {
+                                        HStack(spacing: 6) {
+                                            ForEach(suggestions, id: \.self) { unit in
+                                                Button {
+                                                    row.unit = unit
+                                                    focusedField = nil
+                                                } label: {
+                                                    Text(unit)
+                                                        .font(.caption.weight(.medium))
+                                                        .foregroundStyle(AppColor.ink)
+                                                        .padding(.horizontal, 10)
+                                                        .padding(.vertical, 4)
+                                                        .background(AppColor.accentSoft, in: Capsule())
+                                                }
+                                                .buttonStyle(.plain)
+                                            }
+                                        }
                                     }
                                 }
-                            if ingredientRows.count > 1 {
-                                Button(role: .destructive) {
-                                    ingredientRows.removeAll { $0.id == row.id }
-                                    customUnitRowIDs.remove(row.id)
-                                } label: {
-                                    Image(systemName: "minus.circle.fill")
-                                        .foregroundStyle(.red)
-                                }
-                                .buttonStyle(.borderless)
                             }
                         }
                     }

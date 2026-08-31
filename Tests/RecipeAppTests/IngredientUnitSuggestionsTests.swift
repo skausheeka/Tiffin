@@ -62,4 +62,45 @@ final class IngredientUnitSuggestionsTests: XCTestCase {
         }
         XCTAssertLessThan(cupIndex, loafIndex, "common units like 'cup' should sort before rarer ones like 'loaf'")
     }
+
+    func test_allUnits_includesHandful() {
+        XCTAssertTrue(IngredientUnitSuggestions.allUnits.contains("handful"))
+    }
+
+    // MARK: - suggestions(forIngredient:matching:)
+
+    func test_suggestions_emptyQuery_leadsWithIngredientsOwnGuess() {
+        let suggestions = IngredientUnitSuggestions.suggestions(forIngredient: "cilantro", matching: "")
+
+        XCTAssertEqual(suggestions.first, "cup")
+        XCTAssertTrue(suggestions.contains("handful"), "should still offer alternatives beyond the one best guess")
+    }
+
+    func test_suggestions_isNeverLimitedToTheSingleGuess() {
+        // The whole point: cilantro could reasonably be a cup, a handful, or a bunch —
+        // not boxed into one forced unit.
+        let suggestions = IngredientUnitSuggestions.suggestions(forIngredient: "cilantro", matching: "")
+
+        XCTAssertTrue(suggestions.contains("handful"))
+        XCTAssertTrue(suggestions.contains("bunch"))
+        XCTAssertGreaterThan(suggestions.count, 1)
+    }
+
+    func test_suggestions_filtersByTypedQuery() {
+        let suggestions = IngredientUnitSuggestions.suggestions(forIngredient: "cilantro", matching: "han")
+
+        XCTAssertEqual(suggestions, ["handful"])
+    }
+
+    func test_suggestions_queryWithNoMatches_returnsEmpty() {
+        let suggestions = IngredientUnitSuggestions.suggestions(forIngredient: "cilantro", matching: "xyz")
+
+        XCTAssertEqual(suggestions, [])
+    }
+
+    func test_suggestions_noIngredientMatch_stillReturnsGeneralUnits() {
+        let suggestions = IngredientUnitSuggestions.suggestions(forIngredient: "unobtainium", matching: "")
+
+        XCTAssertEqual(suggestions, IngredientUnitSuggestions.allUnits)
+    }
 }
