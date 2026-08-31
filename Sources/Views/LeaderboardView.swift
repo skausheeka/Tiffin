@@ -78,14 +78,15 @@ private struct LeaderboardRow: View {
                 Text(recipe.title)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(AppColor.ink)
-                HStack(spacing: 4) {
-                    StarRatingView(
-                        rating: recipe.averageRating.map { Int($0.rounded()) },
-                        size: 10,
-                        interactive: false
-                    )
-                    if let average = recipe.averageRating {
-                        Text(String(format: "%.1f · Cooked ×%d", average, recipe.timesCooked))
+                if let average = recipe.averageRating {
+                    HStack(spacing: 4) {
+                        Text(String(format: "%.1f", average))
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(AppColor.ink)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(AppColor.gold, in: Capsule())
+                        Text("Cooked ×\(recipe.timesCooked)")
                             .font(.caption2)
                             .foregroundStyle(AppColor.inkMuted)
                     }

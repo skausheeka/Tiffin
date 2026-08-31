@@ -33,13 +33,9 @@ struct RecipePerformanceView: View {
                     }
                     if let average = recipe.averageRating {
                         VStack(alignment: .leading, spacing: 2) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "star.fill")
-                                    .foregroundStyle(AppColor.gold)
-                                Text(String(format: "%.1f", average))
-                                    .font(.title2.bold())
-                                    .foregroundStyle(AppColor.ink)
-                            }
+                            Text(String(format: "%.1f/10", average))
+                                .font(.title2.bold())
+                                .foregroundStyle(AppColor.gold)
                             Text("average rating")
                                 .font(.caption)
                                 .foregroundStyle(AppColor.inkMuted)
@@ -100,7 +96,12 @@ private struct CookLogRow: View {
             .clipShape(RoundedRectangle(cornerRadius: 10))
 
             VStack(alignment: .leading, spacing: 3) {
-                StarRatingView(rating: entry.rating, size: 12, interactive: false)
+                Text("\(entry.rating)/10")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(AppColor.ink)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 2)
+                    .background(AppColor.gold, in: Capsule())
                 Text(entry.date.formatted(date: .abbreviated, time: .omitted))
                     .font(.caption)
                     .foregroundStyle(AppColor.inkMuted)

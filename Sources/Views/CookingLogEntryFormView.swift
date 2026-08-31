@@ -11,7 +11,7 @@ struct CookingLogEntryFormView: View {
 
     @State private var selectedRecipe: Recipe?
     @State private var date: Date
-    @State private var rating: Int?
+    @State private var rating: Int
     @State private var prepTimeText: String
     @State private var cookTimeText: String
     @State private var noteText: String
@@ -22,7 +22,7 @@ struct CookingLogEntryFormView: View {
     init(preselectedRecipe: Recipe? = nil) {
         _selectedRecipe = State(initialValue: preselectedRecipe)
         _date = State(initialValue: .now)
-        _rating = State(initialValue: nil)
+        _rating = State(initialValue: 5)
         _prepTimeText = State(initialValue: "")
         _cookTimeText = State(initialValue: "")
         _noteText = State(initialValue: "")
@@ -55,12 +55,19 @@ struct CookingLogEntryFormView: View {
                         .keyboardType(.numberPad)
                 }
                 Section("How did it go?") {
-                    HStack {
-                        Spacer()
-                        StarRatingView(rating: rating, size: 30) { star in
-                            rating = (rating == star) ? nil : star
-                        }
-                        Spacer()
+                    VStack(spacing: 10) {
+                        Text("\(rating)/10")
+                            .font(.title3.bold())
+                            .foregroundStyle(AppColor.gold)
+                        Slider(
+                            value: Binding(
+                                get: { Double(rating) },
+                                set: { rating = Int($0.rounded()) }
+                            ),
+                            in: 1...10,
+                            step: 1
+                        )
+                        .tint(AppColor.gold)
                     }
                     .padding(.vertical, 4)
                 }
@@ -99,7 +106,7 @@ struct CookingLogEntryFormView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", action: save)
-                        .disabled(selectedRecipe == nil || rating == nil)
+                        .disabled(selectedRecipe == nil)
                 }
             }
             .sheet(isPresented: $isPresentingRecipePicker) {
@@ -109,7 +116,7 @@ struct CookingLogEntryFormView: View {
     }
 
     private func save() {
-        guard let selectedRecipe, let rating else { return }
+        guard let selectedRecipe else { return }
         let note = noteText.trimmingCharacters(in: .whitespaces)
         let prepTime = Int(prepTimeText)
         let cookTime = Int(cookTimeText)

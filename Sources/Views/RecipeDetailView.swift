@@ -78,8 +78,13 @@ struct RecipeDetailView: View {
                 HStack(spacing: 12) {
                     if let average = recipe.averageRating {
                         HStack(spacing: 6) {
-                            StarRatingView(rating: Int(average.rounded()), size: 18, interactive: false)
-                            Text(String(format: "%.1f · Cooked ×%d", average, recipe.timesCooked))
+                            Text(String(format: "%.1f/10", average))
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(AppColor.ink)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .background(AppColor.gold, in: Capsule())
+                            Text("Cooked ×\(recipe.timesCooked)")
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(AppColor.inkMuted)
                         }
