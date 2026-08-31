@@ -1,21 +1,5 @@
 import Foundation
 
-enum TimeBucket: String, CaseIterable, Identifiable {
-    case under30 = "Under 30 min"
-    case thirtyToSixty = "30–60 min"
-    case over60 = "Over 60 min"
-
-    var id: String { rawValue }
-
-    func matches(totalMinutes: Int) -> Bool {
-        switch self {
-        case .under30: totalMinutes < 30
-        case .thirtyToSixty: (30...60).contains(totalMinutes)
-        case .over60: totalMinutes > 60
-        }
-    }
-}
-
 enum CookedBucket: String, CaseIterable, Identifiable {
     case never = "Never cooked"
     case oneOrTwo = "Cooked 1–2 times"
@@ -32,20 +16,23 @@ enum CookedBucket: String, CaseIterable, Identifiable {
     }
 }
 
-/// A combined set of card-grid filters — cuisine, course, time to cook, and
-/// times cooked — all optional and applied together (AND, not OR).
+/// A combined set of card-grid filters — cuisine, course, a max time-to-cook
+/// threshold, and times cooked — all optional and applied together (AND, not OR).
 struct RecipeFilter: Equatable {
     var cuisine: String?
     var course: RecipeCourse?
-    var timeBucket: TimeBucket?
+    /// Recipes whose prep + cook time is at or under this many minutes. `nil` means no
+    /// constraint — an exact, adjustable threshold rather than a fixed bucket, since
+    /// "under 40 minutes" is a perfectly normal ask that a 30/60 split can't express.
+    var maxCookTimeMinutes: Int?
     var cookedBucket: CookedBucket?
 
     var isActive: Bool {
-        cuisine != nil || course != nil || timeBucket != nil || cookedBucket != nil
+        cuisine != nil || course != nil || maxCookTimeMinutes != nil || cookedBucket != nil
     }
 
     var activeCount: Int {
-        [cuisine != nil, course != nil, timeBucket != nil, cookedBucket != nil]
+        [cuisine != nil, course != nil, maxCookTimeMinutes != nil, cookedBucket != nil]
             .filter { $0 }
             .count
     }
@@ -57,9 +44,9 @@ struct RecipeFilter: Equatable {
         if let course, recipe.courseValue != course {
             return false
         }
-        if let timeBucket {
+        if let maxCookTimeMinutes {
             let total = (recipe.prepTimeMinutes ?? 0) + (recipe.cookTimeMinutes ?? 0)
-            guard total > 0, timeBucket.matches(totalMinutes: total) else { return false }
+            guard total > 0, total <= maxCookTimeMinutes else { return false }
         }
         if let cookedBucket, !cookedBucket.matches(timesCooked: recipe.timesCooked) {
             return false

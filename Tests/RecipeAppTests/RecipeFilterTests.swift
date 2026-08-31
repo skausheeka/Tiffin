@@ -17,25 +17,6 @@ final class RecipeFilterTests: XCTestCase {
         context = nil
     }
 
-    // MARK: - TimeBucket
-
-    func test_timeBucket_under30() {
-        XCTAssertTrue(TimeBucket.under30.matches(totalMinutes: 20))
-        XCTAssertFalse(TimeBucket.under30.matches(totalMinutes: 30))
-    }
-
-    func test_timeBucket_thirtyToSixty_isInclusiveOnBothEnds() {
-        XCTAssertTrue(TimeBucket.thirtyToSixty.matches(totalMinutes: 30))
-        XCTAssertTrue(TimeBucket.thirtyToSixty.matches(totalMinutes: 60))
-        XCTAssertFalse(TimeBucket.thirtyToSixty.matches(totalMinutes: 29))
-        XCTAssertFalse(TimeBucket.thirtyToSixty.matches(totalMinutes: 61))
-    }
-
-    func test_timeBucket_over60() {
-        XCTAssertTrue(TimeBucket.over60.matches(totalMinutes: 61))
-        XCTAssertFalse(TimeBucket.over60.matches(totalMinutes: 60))
-    }
-
     // MARK: - CookedBucket
 
     func test_cookedBucket_never() {
@@ -88,15 +69,26 @@ final class RecipeFilterTests: XCTestCase {
         XCTAssertFalse(filter.matches(Recipe(title: "No Course")))
     }
 
-    func test_timeBucketFilter_excludesRecipesWithNoTimeSet() {
+    func test_maxCookTimeFilter_excludesRecipesWithNoTimeSet() {
         var filter = RecipeFilter()
-        filter.timeBucket = .under30
+        filter.maxCookTimeMinutes = 30
 
         let quick = Recipe(title: "Quick", prepTimeMinutes: 10, cookTimeMinutes: 15)
         let noTime = Recipe(title: "No Time")
 
         XCTAssertTrue(filter.matches(quick))
         XCTAssertFalse(filter.matches(noTime))
+    }
+
+    func test_maxCookTimeFilter_isInclusiveAtTheThreshold() {
+        var filter = RecipeFilter()
+        filter.maxCookTimeMinutes = 30
+
+        let exactlyAtLimit = Recipe(title: "Exactly 30", prepTimeMinutes: 10, cookTimeMinutes: 20)
+        let overLimit = Recipe(title: "Over 30", prepTimeMinutes: 15, cookTimeMinutes: 20)
+
+        XCTAssertTrue(filter.matches(exactlyAtLimit))
+        XCTAssertFalse(filter.matches(overLimit))
     }
 
     func test_cookedBucketFilter() throws {
