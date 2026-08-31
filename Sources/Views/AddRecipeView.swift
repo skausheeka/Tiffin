@@ -8,9 +8,15 @@ private struct StepEntry: Identifiable, Hashable {
     var text: String
 }
 
+private struct TagTypoSuggestion: Identifiable {
+    let id = UUID()
+    let newTag: String
+    let existingTag: String
+}
+
 struct AddRecipeView: View {
     private enum Field: Hashable {
-        case prepTime, cookTime, servings, sourceURL
+        case prepTime, cookTime, servings, sourceURL, tag
     }
 
     private enum ValidationIssue: Hashable {
@@ -21,6 +27,8 @@ struct AddRecipeView: View {
     @Environment(\.dismiss) private var dismiss
     @FocusState private var focusedField: Field?
     @State private var validationIssues: Set<ValidationIssue> = []
+    @Query(sort: \Recipe.createdAt) private var allRecipesForTagLookup: [Recipe]
+    @State private var pendingTypoSuggestion: TagTypoSuggestion?
 
     private let existingRecipe: Recipe?
     private let isImportedPrefill: Bool
@@ -63,6 +71,29 @@ struct AddRecipeView: View {
             try? Data(contentsOf: PhotoStore.url(for: filename))
         }
         _photoDatas = State(initialValue: existingPhotoDatas)
+    }
+
+    /// Every tag in use across all recipes, deduped case-insensitively (first-seen
+    /// casing wins) — the pool tags get suggested from and checked against for reuse.
+    private var existingTagPool: [String] {
+        var seen = Set<String>()
+        var pool: [String] = []
+        for recipe in allRecipesForTagLookup {
+            for tag in recipe.tags where seen.insert(tag.lowercased()).inserted {
+                pool.append(tag)
+            }
+        }
+        return pool
+    }
+
+    private var tagSuggestions: [String] {
+        let trimmed = newTagText.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return [] }
+        return existingTagPool
+            .filter { $0.localizedCaseInsensitiveContains(trimmed) }
+            .filter { candidate in !tags.contains { $0.caseInsensitiveCompare(candidate) == .orderedSame } }
+            .prefix(5)
+            .map { $0 }
     }
 
     var body: some View {
@@ -250,27 +281,7 @@ struct AddRecipeView: View {
                         .submitLabel(.done)
                         .onSubmit { focusedField = nil }
                 }
-                Section("Tags") {
-                    ForEach(tags, id: \.self) { tag in
-                        HStack(spacing: 8) {
-                            Circle()
-                                .fill(AppColor.inkMuted)
-                                .frame(width: 5, height: 5)
-                            Text(tag)
-                            Spacer()
-                            Button(role: .destructive) {
-                                tags.removeAll { $0 == tag }
-                            } label: {
-                                Image(systemName: "minus.circle.fill")
-                                    .foregroundStyle(.red)
-                            }
-                            .buttonStyle(.borderless)
-                        }
-                    }
-                    TextField("Add a tag, e.g. dinner", text: $newTagText)
-                        .submitLabel(.done)
-                        .onSubmit(commitTag)
-                }
+                tagsSection
                 Section("Notes") {
                     TextField("e.g. add more salt next time", text: $noteText, axis: .vertical)
                         .lineLimit(1...4)
@@ -288,6 +299,73 @@ struct AddRecipeView: View {
                     Button("Save", action: save)
                 }
             }
+            .confirmationDialog(
+                "Similar Tag Exists",
+                isPresented: Binding(
+                    get: { pendingTypoSuggestion != nil },
+                    set: { if !$0 { pendingTypoSuggestion = nil } }
+                ),
+                presenting: pendingTypoSuggestion
+            ) { suggestion in
+                Button("Use \"\(suggestion.existingTag)\"") {
+                    addTagIfNeeded(suggestion.existingTag)
+                    pendingTypoSuggestion = nil
+                }
+                Button("Keep \"\(suggestion.newTag)\" as a New Tag") {
+                    addTagIfNeeded(suggestion.newTag)
+                    pendingTypoSuggestion = nil
+                }
+                Button("Cancel", role: .cancel) {
+                    pendingTypoSuggestion = nil
+                }
+            } message: { suggestion in
+                Text("\"\(suggestion.newTag)\" looks similar to the existing tag \"\(suggestion.existingTag)\". Which did you mean?")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var tagsSection: some View {
+        Section("Tags") {
+            ForEach(tags, id: \.self) { tag in
+                HStack(spacing: 8) {
+                    Button {
+                        tags.removeAll { $0 == tag }
+                        newTagText = tag
+                        focusedField = .tag
+                    } label: {
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(AppColor.inkMuted)
+                                .frame(width: 5, height: 5)
+                            Text(tag)
+                                .foregroundStyle(AppColor.ink)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    Spacer()
+                    Button(role: .destructive) {
+                        tags.removeAll { $0 == tag }
+                    } label: {
+                        Image(systemName: "minus.circle.fill")
+                            .foregroundStyle(.red)
+                    }
+                    .buttonStyle(.borderless)
+                }
+            }
+            TextField("Add a tag, e.g. dinner", text: $newTagText)
+                .focused($focusedField, equals: .tag)
+                .submitLabel(.done)
+                .onSubmit { commitTag() }
+            ForEach(tagSuggestions, id: \.self) { suggestion in
+                Button {
+                    newTagText = ""
+                    addTagIfNeeded(suggestion)
+                } label: {
+                    Label(suggestion, systemImage: "arrow.turn.down.left")
+                        .foregroundStyle(AppColor.inkMuted)
+                }
+            }
         }
     }
 
@@ -298,15 +376,38 @@ struct AddRecipeView: View {
             .foregroundStyle(.red)
     }
 
-    private func commitTag() {
+    /// Commits the pending tag text, normalizing to Title Case for reuse and — if it's
+    /// a close-but-not-identical match to an existing tag — pausing to ask whether it's
+    /// a typo instead of appending it outright. Returns `false` when that confirmation
+    /// dialog is now showing, so callers (namely `save()`) know to wait rather than
+    /// proceed with a stale `tags` list.
+    @discardableResult
+    private func commitTag() -> Bool {
         let trimmed = newTagText.trimmingCharacters(in: .whitespaces)
         newTagText = ""
-        guard !trimmed.isEmpty, !tags.contains(where: { $0.caseInsensitiveCompare(trimmed) == .orderedSame }) else { return }
-        tags.append(trimmed)
+        guard !trimmed.isEmpty else { return true }
+        guard !tags.contains(where: { $0.caseInsensitiveCompare(trimmed) == .orderedSame }) else { return true }
+
+        let normalized = TagNormalizer.titleCased(trimmed)
+
+        if let existingMatch = existingTagPool.first(where: {
+            $0.caseInsensitiveCompare(normalized) != .orderedSame && TagNormalizer.possibleTypo($0, normalized)
+        }) {
+            pendingTypoSuggestion = TagTypoSuggestion(newTag: normalized, existingTag: existingMatch)
+            return false
+        }
+
+        addTagIfNeeded(normalized)
+        return true
+    }
+
+    private func addTagIfNeeded(_ tag: String) {
+        guard !tags.contains(where: { $0.caseInsensitiveCompare(tag) == .orderedSame }) else { return }
+        tags.append(tag)
     }
 
     private func save() {
-        commitTag()
+        guard commitTag() else { return }
 
         let trimmedTitle = title.trimmingCharacters(in: .whitespaces)
         let ingredients = Recipe.cleanIngredients(ingredientRows)
