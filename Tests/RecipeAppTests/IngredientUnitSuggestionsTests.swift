@@ -103,4 +103,23 @@ final class IngredientUnitSuggestionsTests: XCTestCase {
 
         XCTAssertEqual(suggestions, IngredientUnitSuggestions.allUnits)
     }
+
+    func test_suggestions_includesCustomUnitsAfterTheCuratedList() {
+        let suggestions = IngredientUnitSuggestions.suggestions(forIngredient: "butter", matching: "", customUnits: ["knob"])
+
+        XCTAssertTrue(suggestions.contains("knob"))
+        XCTAssertEqual(suggestions.last, "knob")
+    }
+
+    func test_suggestions_customUnitDuplicatingCuratedOne_isNotRepeated() {
+        let suggestions = IngredientUnitSuggestions.suggestions(forIngredient: "cilantro", matching: "", customUnits: ["Cup"])
+
+        XCTAssertEqual(suggestions.filter { $0.caseInsensitiveCompare("cup") == .orderedSame }.count, 1)
+    }
+
+    func test_suggestions_customUnits_areFilteredByQueryToo() {
+        let suggestions = IngredientUnitSuggestions.suggestions(forIngredient: "butter", matching: "kn", customUnits: ["knob"])
+
+        XCTAssertEqual(suggestions, ["knob"])
+    }
 }

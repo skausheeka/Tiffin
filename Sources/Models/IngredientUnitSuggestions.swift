@@ -753,15 +753,19 @@ enum IngredientUnitSuggestions {
 
     /// Several relevant unit suggestions, most relevant first — never a closed set, just
     /// a shortcut. The ingredient's own best-guess unit (if any) leads, followed by the
-    /// general common-units list, filtered by whatever's already typed in the unit field.
+    /// general common-units list, then any caller-supplied custom units (e.g. ones typed
+    /// into other recipes before), filtered by whatever's already typed in the unit field.
     /// The same ingredient can reasonably be measured different ways (cilantro by the
     /// cup, the handful, or the bunch), so this offers options instead of forcing one.
-    static func suggestions(forIngredient ingredientName: String, matching query: String) -> [String] {
+    static func suggestions(forIngredient ingredientName: String, matching query: String, customUnits: [String] = []) -> [String] {
         var ranked: [String] = []
         if let guess = suggestedUnit(for: ingredientName) {
             ranked.append(guess)
         }
         for unit in allUnits where !ranked.contains(unit) {
+            ranked.append(unit)
+        }
+        for unit in customUnits where !ranked.contains(where: { $0.caseInsensitiveCompare(unit) == .orderedSame }) {
             ranked.append(unit)
         }
 

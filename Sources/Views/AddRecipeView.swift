@@ -28,7 +28,7 @@ struct AddRecipeView: View {
     @Environment(\.dismiss) private var dismiss
     @FocusState private var focusedField: Field?
     @State private var validationIssues: Set<ValidationIssue> = []
-    @Query(sort: \Recipe.createdAt) private var allRecipesForTagLookup: [Recipe]
+    @Query(sort: \Recipe.createdAt) private var allRecipesForSuggestions: [Recipe]
     @State private var pendingTypoSuggestion: TagTypoSuggestion?
 
     private let existingRecipe: Recipe?
@@ -81,9 +81,26 @@ struct AddRecipeView: View {
     private var existingTagPool: [String] {
         var seen = Set<String>()
         var pool: [String] = []
-        for recipe in allRecipesForTagLookup {
+        for recipe in allRecipesForSuggestions {
             for tag in recipe.tags where seen.insert(tag.lowercased()).inserted {
                 pool.append(tag)
+            }
+        }
+        return pool
+    }
+
+    /// Every unit already used across all recipes' ingredients, deduped case-insensitively
+    /// (first-seen casing wins). Folded into unit suggestions alongside the curated
+    /// common-units list, so a custom unit typed once (e.g. "knob", "handful") becomes a
+    /// suggestion for every future recipe — the master list grows from what's actually used.
+    private var customUnitPool: [String] {
+        var seen = Set<String>()
+        var pool: [String] = []
+        for recipe in allRecipesForSuggestions {
+            for ingredient in recipe.ingredients {
+                let unit = ingredient.unit.trimmingCharacters(in: .whitespaces)
+                guard !unit.isEmpty, seen.insert(unit.lowercased()).inserted else { continue }
+                pool.append(unit)
             }
         }
         return pool
@@ -187,7 +204,11 @@ struct AddRecipeView: View {
                             }
 
                             if focusedField == .unit(row.id) {
-                                let suggestions = IngredientUnitSuggestions.suggestions(forIngredient: row.name, matching: row.unit)
+                                let suggestions = IngredientUnitSuggestions.suggestions(
+                                    forIngredient: row.name,
+                                    matching: row.unit,
+                                    customUnits: customUnitPool
+                                )
                                 if !suggestions.isEmpty {
                                     ScrollView(.horizontal, showsIndicators: false) {
                                         HStack(spacing: 6) {
