@@ -7,6 +7,7 @@ final class RecipeTests: XCTestCase {
 
         XCTAssertEqual(recipe.title, "Rasam")
         XCTAssertEqual(recipe.ingredients, [])
+        XCTAssertEqual(recipe.prepSteps, [])
         XCTAssertEqual(recipe.instructionSteps, [])
         XCTAssertEqual(recipe.tags, [])
         XCTAssertEqual(recipe.photoFilenames, [])
@@ -18,6 +19,12 @@ final class RecipeTests: XCTestCase {
         XCTAssertNil(recipe.note)
         XCTAssertNil(recipe.averageRating)
         XCTAssertEqual(recipe.timesCooked, 0)
+    }
+
+    func test_init_acceptsExplicitPrepSteps() {
+        let recipe = Recipe(title: "Rasam", prepSteps: ["Chop tomatoes", "Soak lentils"])
+
+        XCTAssertEqual(recipe.prepSteps, ["Chop tomatoes", "Soak lentils"])
     }
 
     func test_courseValue_roundTripsThroughRawStorage() {

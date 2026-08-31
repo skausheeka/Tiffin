@@ -133,6 +133,26 @@ struct RecipeDetailView: View {
                     .background(AppColor.surfaceAlt, in: RoundedRectangle(cornerRadius: 14))
                 }
 
+                if !recipe.prepSteps.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Prep").font(.title3.bold()).foregroundStyle(AppColor.ink)
+                        ForEach(Array(recipe.prepSteps.enumerated()), id: \.offset) { index, step in
+                            HStack(alignment: .top, spacing: 8) {
+                                Text("\(index + 1)")
+                                    .font(.caption.weight(.bold))
+                                    .foregroundStyle(AppColor.ink)
+                                    .frame(width: 20, height: 20)
+                                    .background(AppColor.accentSoft, in: Circle())
+                                Text(step)
+                                    .foregroundStyle(AppColor.ink)
+                            }
+                        }
+                    }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(AppColor.surfaceAlt, in: RoundedRectangle(cornerRadius: 14))
+                }
+
                 if !recipe.instructionSteps.isEmpty {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Instructions").font(.title3.bold()).foregroundStyle(AppColor.ink)

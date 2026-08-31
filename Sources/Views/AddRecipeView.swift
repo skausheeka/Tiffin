@@ -36,6 +36,7 @@ struct AddRecipeView: View {
 
     @State private var title: String
     @State private var ingredientRows: [IngredientEntry]
+    @State private var prepSteps: [StepEntry]
     @State private var steps: [StepEntry]
     @State private var tags: [String]
     @State private var newTagText = ""
@@ -56,6 +57,8 @@ struct AddRecipeView: View {
         _title = State(initialValue: existingRecipe?.title ?? prefill?.title ?? "")
         let ingredientSource = existingRecipe?.ingredients ?? prefill?.ingredients ?? []
         _ingredientRows = State(initialValue: ingredientSource.isEmpty ? [IngredientEntry()] : ingredientSource)
+        let prepStepsSource = existingRecipe?.prepSteps ?? prefill?.prepSteps ?? []
+        _prepSteps = State(initialValue: prepStepsSource.map { StepEntry(text: $0) })
         let stepsSource = existingRecipe?.instructionSteps ?? prefill?.steps ?? []
         let existingSteps = stepsSource.map { StepEntry(text: $0) }
         _steps = State(initialValue: existingSteps.isEmpty ? [StepEntry(text: "")] : existingSteps)
@@ -221,6 +224,33 @@ struct AddRecipeView: View {
                     if validationIssues.contains(.ingredients), !Recipe.cleanIngredients(newValue).isEmpty {
                         validationIssues.remove(.ingredients)
                     }
+                }
+                Section {
+                    ForEach(Array(prepSteps.enumerated()), id: \.element.id) { index, _ in
+                        HStack(alignment: .top, spacing: 8) {
+                            Text("\(index + 1).")
+                                .foregroundStyle(.secondary)
+                                .frame(width: 20, alignment: .trailing)
+                            TextField("Prep step \(index + 1)", text: $prepSteps[index].text, axis: .vertical)
+                                .lineLimit(1...4)
+                            Button(role: .destructive) {
+                                prepSteps.remove(at: index)
+                            } label: {
+                                Image(systemName: "minus.circle.fill")
+                                    .foregroundStyle(.red)
+                            }
+                            .buttonStyle(.borderless)
+                        }
+                    }
+                    Button {
+                        prepSteps.append(StepEntry(text: ""))
+                    } label: {
+                        Label("Add Prep Step", systemImage: "plus.circle")
+                    }
+                } header: {
+                    Text("Prep")
+                } footer: {
+                    Text("Optional — mise en place steps like chopping, marinating, or measuring, done before you start cooking.")
                 }
                 Section("Instructions") {
                     ForEach(Array(steps.enumerated()), id: \.element.id) { index, _ in
@@ -415,6 +445,7 @@ struct AddRecipeView: View {
 
         let trimmedTitle = title.trimmingCharacters(in: .whitespaces)
         let ingredients = Recipe.cleanIngredients(ingredientRows)
+        let cleanedPrepSteps = Recipe.cleanSteps(prepSteps.map(\.text))
         let instructionSteps = Recipe.cleanSteps(steps.map(\.text))
 
         var issues: Set<ValidationIssue> = []
@@ -434,6 +465,7 @@ struct AddRecipeView: View {
         if let existingRecipe {
             existingRecipe.title = trimmedTitle
             existingRecipe.ingredients = ingredients
+            existingRecipe.prepSteps = cleanedPrepSteps
             existingRecipe.instructionSteps = instructionSteps
             existingRecipe.tags = tags
             existingRecipe.prepTimeMinutes = Int(prepTimeText)
@@ -455,6 +487,7 @@ struct AddRecipeView: View {
             let recipe = Recipe(
                 title: trimmedTitle,
                 ingredients: ingredients,
+                prepSteps: cleanedPrepSteps,
                 instructionSteps: instructionSteps,
                 tags: tags,
                 photoFilenames: photoFilenames,

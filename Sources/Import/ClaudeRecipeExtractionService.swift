@@ -35,6 +35,7 @@ private struct LLMIngredient: Decodable {
 private struct LLMRecipeExtractionResponse: Decodable {
     var title: String
     var ingredients: [LLMIngredient]
+    var prepSteps: [String]?
     var steps: [String]
     var course: String?
     var prepTimeMinutes: Int?
@@ -72,8 +73,12 @@ enum ClaudeRecipeExtractionService {
     handwritten). If a field can't be confidently determined, return null (or an empty array) \
     rather than guessing. For ingredients, split each line into amount (a number, null if vague \
     like "to taste"), unit (a short standard unit, null if unitless e.g. "2 eggs"), and name \
-    (keep useful qualifiers like "softened" or "diced" in the name). For steps, split into \
-    individual ordered steps with numbering or bullets stripped. For course, choose the single \
+    (keep useful qualifiers like "softened" or "diced" in the name). Split the method into two \
+    ordered lists, with numbering or bullets stripped from each step: prepSteps for mise en \
+    place done before active cooking starts (washing, chopping, marinating, measuring, mixing \
+    dry ingredients, preheating), and steps for everything from the heat going on to plating. \
+    If the recipe doesn't clearly separate prep from cooking, leave prepSteps empty and put \
+    every step in steps — don't force a split that isn't there. For course, choose the single \
     best match from exactly Appetizer, Entree, Dessert, or null if none clearly fits. For tags, \
     put a guessed cuisine first if reasonably inferable (e.g. "Italian"), followed by up to 4 \
     other short descriptive tags. Times are whole minutes; if the source gives a range, use the \
@@ -96,6 +101,7 @@ enum ClaudeRecipeExtractionService {
                     "required": ["name"],
                 ],
             ],
+            "prepSteps": ["type": "array", "items": ["type": "string"]],
             "steps": ["type": "array", "items": ["type": "string"]],
             "course": ["type": ["string", "null"], "enum": ["Appetizer", "Entree", "Dessert", NSNull()]],
             "prepTimeMinutes": ["type": ["integer", "null"]],
@@ -164,6 +170,7 @@ enum ClaudeRecipeExtractionService {
         let ingredients = Recipe.cleanIngredients(parsed.ingredients.map {
             IngredientEntry(name: $0.name, amount: $0.amount, unit: $0.unit ?? "")
         })
+        let prepSteps = Recipe.cleanSteps(parsed.prepSteps ?? [])
         let steps = Recipe.cleanSteps(parsed.steps)
         let course = parsed.course.flatMap { courseString in
             RecipeCourse.allCases.first { $0.rawValue.caseInsensitiveCompare(courseString) == .orderedSame }
@@ -173,6 +180,7 @@ enum ClaudeRecipeExtractionService {
         return ParsedRecipeDraft(
             title: parsed.title.trimmingCharacters(in: .whitespaces),
             ingredients: ingredients,
+            prepSteps: prepSteps,
             steps: steps,
             course: course,
             prepTimeMinutes: parsed.prepTimeMinutes,

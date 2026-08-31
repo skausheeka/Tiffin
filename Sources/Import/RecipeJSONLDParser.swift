@@ -68,7 +68,7 @@ enum RecipeJSONLDParser {
         let title = stringValue(recipe["name"]) ?? ""
         let ingredientLines = stringArray(recipe["recipeIngredient"]) ?? stringArray(recipe["ingredients"]) ?? []
         let ingredients = ingredientLines.map(IngredientLineParser.parse)
-        let steps = flattenInstructions(recipe["recipeInstructions"])
+        let flattenedInstructions = flattenInstructions(recipe["recipeInstructions"])
 
         guard !title.isEmpty, !ingredients.isEmpty else { return nil }
 
@@ -84,7 +84,8 @@ enum RecipeJSONLDParser {
         return ParsedRecipeDraft(
             title: title,
             ingredients: ingredients,
-            steps: steps,
+            prepSteps: flattenedInstructions.prepSteps,
+            steps: flattenedInstructions.steps,
             course: guessCourse(fromCategory: stringValue(recipe["recipeCategory"])),
             prepTimeMinutes: parseDuration(stringValue(recipe["prepTime"])),
             cookTimeMinutes: parseDuration(stringValue(recipe["cookTime"])),
@@ -94,14 +95,21 @@ enum RecipeJSONLDParser {
         )
     }
 
-    private static func flattenInstructions(_ value: Any?) -> [String] {
+    /// Flattens `recipeInstructions` into ordered prep/cook buckets. A `HowToSection`
+    /// whose `name` mentions "prep" routes its entire contents to `prepSteps`, regardless
+    /// of what's nested inside it; everything else — untitled steps, other section names —
+    /// stays in `steps`. Most sites don't label a "Prep" section, so `prepSteps` simply
+    /// stays empty for those — a safe, no-op default rather than a guess.
+    private static func flattenInstructions(_ value: Any?) -> (prepSteps: [String], steps: [String]) {
         if let string = value as? String {
-            return string
+            let steps = string
                 .split(whereSeparator: { $0.isNewline })
                 .map { $0.trimmingCharacters(in: .whitespaces) }
                 .filter { !$0.isEmpty }
+            return ([], steps)
         }
         if let array = value as? [Any] {
+            var prepSteps: [String] = []
             var steps: [String] = []
             for item in array {
                 if let itemString = item as? String {
@@ -109,7 +117,14 @@ enum RecipeJSONLDParser {
                 } else if let dict = item as? [String: Any] {
                     let type = dict["@type"] as? String
                     if type == "HowToSection", let nested = dict["itemListElement"] {
-                        steps.append(contentsOf: flattenInstructions(nested))
+                        let nestedResult = flattenInstructions(nested)
+                        let sectionName = dict["name"] as? String
+                        if let sectionName, sectionName.localizedCaseInsensitiveContains("prep") {
+                            prepSteps.append(contentsOf: nestedResult.prepSteps + nestedResult.steps)
+                        } else {
+                            prepSteps.append(contentsOf: nestedResult.prepSteps)
+                            steps.append(contentsOf: nestedResult.steps)
+                        }
                     } else if let text = dict["text"] as? String {
                         steps.append(text)
                     } else if let name = dict["name"] as? String {
@@ -117,11 +132,11 @@ enum RecipeJSONLDParser {
                     }
                 }
             }
-            return steps
-                .map { $0.trimmingCharacters(in: .whitespaces) }
-                .filter { !$0.isEmpty }
+            let cleanedPrepSteps = prepSteps.map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+            let cleanedSteps = steps.map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+            return (cleanedPrepSteps, cleanedSteps)
         }
-        return []
+        return ([], [])
     }
 
     private static func parseDuration(_ iso: String?) -> Int? {

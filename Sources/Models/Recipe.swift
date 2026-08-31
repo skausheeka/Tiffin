@@ -5,6 +5,7 @@ import SwiftData
 final class Recipe {
     var title: String = ""
     var ingredients: [IngredientEntry] = []
+    var prepSteps: [String] = []
     var instructionSteps: [String] = []
     var tags: [String] = []
     var createdAt: Date = Date.now
@@ -21,6 +22,7 @@ final class Recipe {
     init(
         title: String,
         ingredients: [IngredientEntry] = [],
+        prepSteps: [String] = [],
         instructionSteps: [String] = [],
         tags: [String] = [],
         createdAt: Date = .now,
@@ -34,6 +36,7 @@ final class Recipe {
     ) {
         self.title = title
         self.ingredients = ingredients
+        self.prepSteps = prepSteps
         self.instructionSteps = instructionSteps
         self.tags = tags
         self.createdAt = createdAt

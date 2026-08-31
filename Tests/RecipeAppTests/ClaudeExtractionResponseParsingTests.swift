@@ -23,6 +23,7 @@ final class ClaudeExtractionResponseParsingTests: XCTestCase {
         {
             "title": "Weeknight Pasta",
             "ingredients": [{"amount": 8, "unit": "oz", "name": "spaghetti"}],
+            "prepSteps": ["Measure out the spaghetti."],
             "steps": ["Boil water.", "Cook pasta."],
             "course": "Entree",
             "prepTimeMinutes": 10,
@@ -37,6 +38,7 @@ final class ClaudeExtractionResponseParsingTests: XCTestCase {
         XCTAssertEqual(draft.title, "Weeknight Pasta")
         XCTAssertEqual(draft.ingredients.count, 1)
         XCTAssertEqual(draft.ingredients.first?.name, "spaghetti")
+        XCTAssertEqual(draft.prepSteps, ["Measure out the spaghetti."])
         XCTAssertEqual(draft.steps, ["Boil water.", "Cook pasta."])
         XCTAssertEqual(draft.course, .entree)
         XCTAssertEqual(draft.prepTimeMinutes, 10)

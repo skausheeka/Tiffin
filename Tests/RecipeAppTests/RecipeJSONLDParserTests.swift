@@ -70,6 +70,39 @@ final class RecipeJSONLDParserTests: XCTestCase {
         let draft = try XCTUnwrap(RecipeJSONLDParser.parseJSONLD(json))
 
         XCTAssertEqual(draft.steps, ["Cook the rice.", "Layer everything together."])
+        XCTAssertEqual(draft.prepSteps, [], "Section names with no \"prep\" mention shouldn't be guessed as prep")
+    }
+
+    func test_parseJSONLD_prepNamedHowToSection_routesToPrepSteps() throws {
+        let json = """
+        {
+            "@type": "Recipe",
+            "name": "Weeknight Curry",
+            "recipeIngredient": ["1 onion"],
+            "recipeInstructions": [
+                {
+                    "@type": "HowToSection",
+                    "name": "Prep",
+                    "itemListElement": [
+                        {"@type": "HowToStep", "text": "Dice the onion."},
+                        {"@type": "HowToStep", "text": "Mince the garlic."}
+                    ]
+                },
+                {
+                    "@type": "HowToSection",
+                    "name": "Cook",
+                    "itemListElement": [
+                        {"@type": "HowToStep", "text": "Saute the onion."}
+                    ]
+                }
+            ]
+        }
+        """
+
+        let draft = try XCTUnwrap(RecipeJSONLDParser.parseJSONLD(json))
+
+        XCTAssertEqual(draft.prepSteps, ["Dice the onion.", "Mince the garlic."])
+        XCTAssertEqual(draft.steps, ["Saute the onion."])
     }
 
     func test_parseJSONLD_graphWrappedRecipe_wordPressStyle() throws {

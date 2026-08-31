@@ -5,6 +5,7 @@ import Foundation
 struct ParsedRecipeDraft: Equatable {
     var title: String
     var ingredients: [IngredientEntry]
+    var prepSteps: [String] = []
     var steps: [String]
     var course: RecipeCourse?
     var prepTimeMinutes: Int?
