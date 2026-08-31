@@ -19,6 +19,8 @@ private struct RibbonShape: Shape {
 /// "Full-Bleed" recipe card — photo fills the card, title/meta sit on a bottom scrim.
 struct RecipeCardView: View {
     let recipe: Recipe
+    var onEdit: (() -> Void)? = nil
+    var onDelete: (() -> Void)? = nil
 
     private var coverImage: UIImage? {
         guard let filename = recipe.coverPhotoFilename else { return nil }
@@ -63,19 +65,42 @@ struct RecipeCardView: View {
                     .offset(x: -6)
             }
 
-            if let average = recipe.averageRating {
-                HStack(spacing: 3) {
-                    Image(systemName: "star.fill")
-                        .font(.system(size: 8))
-                    Text(String(format: "%.1f", average))
-                        .font(.caption2.weight(.bold))
+            if onEdit != nil || onDelete != nil {
+                Menu {
+                    if let onEdit {
+                        Button {
+                            onEdit()
+                        } label: {
+                            Label("Edit", systemImage: "pencil")
+                        }
+                    }
+                    if let onDelete {
+                        Button(role: .destructive) {
+                            onDelete()
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(7)
+                        .background(AppColor.ink.opacity(0.4), in: Circle())
                 }
-                .foregroundStyle(.white)
-                .padding(.horizontal, 7)
-                .padding(.vertical, 3)
-                .background(AppColor.ink.opacity(0.5), in: Capsule())
                 .padding(8)
                 .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+
+            if let average = recipe.averageRating {
+                Text(String(format: "%.1f", average))
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(AppColor.ink)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(AppColor.gold, in: Capsule())
+                    .padding(10)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
             }
 
             VStack(alignment: .leading, spacing: 3) {

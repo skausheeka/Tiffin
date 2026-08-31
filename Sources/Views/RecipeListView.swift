@@ -10,6 +10,7 @@ struct RecipeListView: View {
     @State private var recipeFilter = RecipeFilter()
     @State private var path = NavigationPath()
     @State private var recipePendingDelete: Recipe?
+    @State private var recipePendingEdit: Recipe?
 
     private let columns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
 
@@ -33,7 +34,11 @@ struct RecipeListView: View {
                 LazyVGrid(columns: columns, spacing: 10) {
                     ForEach(filteredRecipes) { recipe in
                         NavigationLink(value: recipe) {
-                            RecipeCardView(recipe: recipe)
+                            RecipeCardView(
+                                recipe: recipe,
+                                onEdit: { recipePendingEdit = recipe },
+                                onDelete: { recipePendingDelete = recipe }
+                            )
                         }
                         .buttonStyle(.plain)
                         .contextMenu {
@@ -72,6 +77,9 @@ struct RecipeListView: View {
             }
             .sheet(isPresented: $isPresentingFilters) {
                 RecipeFilterView(filter: $recipeFilter, availableCuisines: availableCuisines)
+            }
+            .sheet(item: $recipePendingEdit) { recipe in
+                AddRecipeView(existingRecipe: recipe)
             }
             .alert(
                 "Delete Recipe?",
