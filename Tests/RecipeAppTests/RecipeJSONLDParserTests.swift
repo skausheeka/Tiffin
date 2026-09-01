@@ -256,6 +256,36 @@ final class RecipeJSONLDParserTests: XCTestCase {
         XCTAssertEqual(draft.course, .dessert)
     }
 
+    func test_parseJSONLD_categoryGuessesBreakfastCourse() throws {
+        let json = """
+        {"@type": "Recipe", "name": "Pancakes", "recipeIngredient": ["1 cup flour"], "recipeInstructions": ["Cook it."], "recipeCategory": "Breakfast"}
+        """
+
+        let draft = try XCTUnwrap(RecipeJSONLDParser.parseJSONLD(json))
+
+        XCTAssertEqual(draft.course, .breakfast)
+    }
+
+    func test_parseJSONLD_categoryGuessesSideCourse() throws {
+        let json = """
+        {"@type": "Recipe", "name": "Mashed Potatoes", "recipeIngredient": ["1 lb potatoes"], "recipeInstructions": ["Mash it."], "recipeCategory": "Side Dish"}
+        """
+
+        let draft = try XCTUnwrap(RecipeJSONLDParser.parseJSONLD(json))
+
+        XCTAssertEqual(draft.course, .side)
+    }
+
+    func test_parseJSONLD_categoryGuessesSnackCourse() throws {
+        let json = """
+        {"@type": "Recipe", "name": "Trail Mix", "recipeIngredient": ["1 cup nuts"], "recipeInstructions": ["Mix it."], "recipeCategory": "Snack"}
+        """
+
+        let draft = try XCTUnwrap(RecipeJSONLDParser.parseJSONLD(json))
+
+        XCTAssertEqual(draft.course, .snack)
+    }
+
     // MARK: - extractRecipeDraft(fromHTML:)
 
     func test_extractRecipeDraft_findsScriptBlockInHTML() throws {

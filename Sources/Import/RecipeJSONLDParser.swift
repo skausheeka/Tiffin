@@ -181,11 +181,20 @@ enum RecipeJSONLDParser {
 
     private static func guessCourse(fromCategory category: String?) -> RecipeCourse? {
         guard let category = category?.lowercased() else { return nil }
+        if category.contains("breakfast") || category.contains("brunch") {
+            return .breakfast
+        }
         if category.contains("dessert") || category.contains("sweet") || category.contains("cake") || category.contains("cookie") {
             return .dessert
         }
-        if category.contains("appetizer") || category.contains("starter") || category.contains("snack") || category.contains("side") {
+        if category.contains("appetizer") || category.contains("starter") {
             return .appetizer
+        }
+        if category.contains("side") {
+            return .side
+        }
+        if category.contains("snack") {
+            return .snack
         }
         if category.contains("entree") || category.contains("main") || category.contains("dinner") || category.contains("lunch") {
             return .entree

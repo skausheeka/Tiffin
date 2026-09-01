@@ -79,7 +79,8 @@ enum ClaudeRecipeExtractionService {
     dry ingredients, preheating), and steps for everything from the heat going on to plating. \
     If the recipe doesn't clearly separate prep from cooking, leave prepSteps empty and put \
     every step in steps — don't force a split that isn't there. For course, choose the single \
-    best match from exactly Appetizer, Entree, Dessert, or null if none clearly fits. For tags, \
+    best match from exactly Breakfast, Appetizer, Entree, Side, Snack, Dessert, or null if none \
+    clearly fits. For tags, \
     put a guessed cuisine first if reasonably inferable (e.g. "Italian"), followed by up to 4 \
     other short descriptive tags. Times are whole minutes; if the source gives a range, use the \
     lower bound.
@@ -103,7 +104,7 @@ enum ClaudeRecipeExtractionService {
             ],
             "prepSteps": ["type": "array", "items": ["type": "string"]],
             "steps": ["type": "array", "items": ["type": "string"]],
-            "course": ["type": ["string", "null"], "enum": ["Appetizer", "Entree", "Dessert", NSNull()]],
+            "course": ["type": ["string", "null"], "enum": ["Breakfast", "Appetizer", "Entree", "Side", "Snack", "Dessert", NSNull()]],
             "prepTimeMinutes": ["type": ["integer", "null"]],
             "cookTimeMinutes": ["type": ["integer", "null"]],
             "servings": ["type": ["integer", "null"]],
