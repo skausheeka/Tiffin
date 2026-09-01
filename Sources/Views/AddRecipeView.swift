@@ -21,7 +21,7 @@ struct AddRecipeView: View {
     }
 
     private enum ValidationIssue: Hashable {
-        case title, ingredients, steps
+        case title, ingredients, steps, course
     }
 
     @Environment(\.modelContext) private var modelContext
@@ -313,6 +313,14 @@ struct AddRecipeView: View {
                             Text(course.rawValue).tag(RecipeCourse?.some(course))
                         }
                     }
+                    .onChange(of: selectedCourse) { _, newValue in
+                        if newValue != nil {
+                            validationIssues.remove(.course)
+                        }
+                    }
+                    if validationIssues.contains(.course) {
+                        validationMessage("Choose a course")
+                    }
                     TextField("Prep time (minutes)", text: $prepTimeText)
                         .keyboardType(.numberPad)
                         .focused($focusedField, equals: .prepTime)
@@ -473,6 +481,7 @@ struct AddRecipeView: View {
         if trimmedTitle.isEmpty { issues.insert(.title) }
         if ingredients.isEmpty { issues.insert(.ingredients) }
         if instructionSteps.isEmpty { issues.insert(.steps) }
+        if selectedCourse == nil { issues.insert(.course) }
 
         guard issues.isEmpty else {
             validationIssues = issues
