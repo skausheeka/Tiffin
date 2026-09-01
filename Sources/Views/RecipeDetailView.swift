@@ -29,20 +29,6 @@ struct RecipeDetailView: View {
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
-    /// Prep and cook steps merged into one ordered sequence — each entry knows whether
-    /// it's a prep or cook step (for the timeline's dot color) and carries a phase
-    /// label only on the first step of that phase.
-    private var timelineSteps: [(phase: String?, text: String, isPrep: Bool)] {
-        var result: [(phase: String?, text: String, isPrep: Bool)] = []
-        for (index, step) in recipe.prepSteps.enumerated() {
-            result.append((index == 0 ? "Prep" : nil, step, true))
-        }
-        for (index, step) in recipe.instructionSteps.enumerated() {
-            result.append((index == 0 ? "Cook" : nil, step, false))
-        }
-        return result
-    }
-
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
@@ -86,12 +72,8 @@ struct RecipeDetailView: View {
                         }
                     }
 
-                    if !timelineSteps.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Method").font(.system(.title3, design: .serif).weight(.bold)).foregroundStyle(AppColor.ink)
-                            methodTimeline
-                        }
-                    }
+                    stepSection(title: "Prep", steps: recipe.prepSteps, color: AppColor.accent)
+                    stepSection(title: "Cook", steps: recipe.instructionSteps, color: AppColor.secondary)
 
                     if let sourceURLString = recipe.sourceURL, let url = URL(string: sourceURLString) {
                         Link(destination: url) {
@@ -259,42 +241,25 @@ struct RecipeDetailView: View {
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(AppColor.surfaceAlt, lineWidth: 1))
     }
 
+    /// A plain numbered list, not a connected stepper — steppers imply active progress
+    /// tracking (done/active/upcoming state), which recipe instructions don't have; a
+    /// shared connecting line between two unrelated phases just reads as broken. Prep
+    /// and Cook are two clearly separate sections, each numbered from 1, distinguished
+    /// only by their circle color.
     @ViewBuilder
-    private var methodTimeline: some View {
-        let prepFraction = recipe.prepSteps.isEmpty ? 0 : Double(recipe.prepSteps.count) / Double(max(timelineSteps.count, 1))
-
-        ZStack(alignment: .topLeading) {
-            LinearGradient(
-                stops: recipe.prepSteps.isEmpty
-                    ? [Gradient.Stop(color: AppColor.secondary, location: 0), Gradient.Stop(color: AppColor.secondary, location: 1)]
-                    : [
-                        Gradient.Stop(color: AppColor.accent, location: 0),
-                        Gradient.Stop(color: AppColor.accent, location: prepFraction),
-                        Gradient.Stop(color: AppColor.secondary, location: prepFraction),
-                        Gradient.Stop(color: AppColor.secondary, location: 1),
-                    ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(width: 2)
-            .padding(.leading, 9)
-
-            VStack(alignment: .leading, spacing: 16) {
-                ForEach(Array(timelineSteps.enumerated()), id: \.offset) { index, item in
-                    HStack(alignment: .top, spacing: 10) {
-                        Text("\(index + 1)")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 20, height: 20)
-                            .background(item.isPrep ? AppColor.accent : AppColor.secondary, in: Circle())
-                        VStack(alignment: .leading, spacing: 2) {
-                            if let phase = item.phase {
-                                Text(phase.uppercased())
-                                    .font(.caption2.weight(.bold))
-                                    .tracking(0.3)
-                                    .foregroundStyle(item.isPrep ? AppColor.accent : AppColor.secondary)
-                            }
-                            Text(item.text)
+    private func stepSection(title: String, steps: [String], color: Color) -> some View {
+        if !steps.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(title).font(.system(.title3, design: .serif).weight(.bold)).foregroundStyle(AppColor.ink)
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
+                        HStack(alignment: .top, spacing: 10) {
+                            Text("\(index + 1)")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 20, height: 20)
+                                .background(color, in: Circle())
+                            Text(step)
                                 .foregroundStyle(AppColor.ink)
                         }
                     }
