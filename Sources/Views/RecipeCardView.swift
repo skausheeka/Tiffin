@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-/// A torn-flag ribbon, used to call out dessert recipes specifically.
+/// A torn-flag ribbon, used to call out a recipe's course.
 private struct RibbonShape: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
@@ -54,13 +54,13 @@ struct RecipeCardView: View {
                 endPoint: .bottom
             )
 
-            if recipe.courseValue == .dessert {
-                Text("Dessert")
+            if let course = recipe.courseValue {
+                Text(course.rawValue)
                     .font(.caption2.weight(.bold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
-                    .background(RibbonShape().fill(AppColor.tertiary))
+                    .background(RibbonShape().fill(AppColor.forCourse(course)))
                     .padding(.top, 12)
                     .offset(x: -6)
             }

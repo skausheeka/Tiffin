@@ -17,6 +17,10 @@ struct RecipeDetailView: View {
         recipe.photoFilenames.compactMap { UIImage(contentsOfFile: PhotoStore.url(for: $0).path) }
     }
 
+    private var heroTint: Color {
+        AppColor.forCourse(recipe.courseValue)
+    }
+
     private var metaLine: String? {
         var parts: [String] = []
         if let prep = recipe.prepTimeMinutes { parts.append("Prep \(prep) min") }
@@ -25,163 +29,92 @@ struct RecipeDetailView: View {
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
+    /// Prep and cook steps merged into one ordered sequence — each entry knows whether
+    /// it's a prep or cook step (for the timeline's dot color) and carries a phase
+    /// label only on the first step of that phase.
+    private var timelineSteps: [(phase: String?, text: String, isPrep: Bool)] {
+        var result: [(phase: String?, text: String, isPrep: Bool)] = []
+        for (index, step) in recipe.prepSteps.enumerated() {
+            result.append((index == 0 ? "Prep" : nil, step, true))
+        }
+        for (index, step) in recipe.instructionSteps.enumerated() {
+            result.append((index == 0 ? "Cook" : nil, step, false))
+        }
+        return result
+    }
+
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                if !images.isEmpty {
-                    TabView {
-                        ForEach(Array(images.enumerated()), id: \.offset) { _, image in
-                            Image(uiImage: image)
-                                .resizable()
-                                .scaledToFill()
-                        }
-                    }
-                    .tabViewStyle(.page(indexDisplayMode: images.count > 1 ? .automatic : .never))
-                    .frame(height: 220)
-                    .frame(maxWidth: .infinity)
-                    .clipped()
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
+            VStack(alignment: .leading, spacing: 0) {
+                hero
 
-                if let course = recipe.courseValue {
-                    Text(course.rawValue)
-                        .font(.caption.weight(.bold))
-                        .textCase(.uppercase)
-                        .tracking(0.4)
-                        .foregroundStyle(AppColor.accent)
-                }
-
-                if !recipe.tags.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 6) {
-                            ForEach(recipe.tags, id: \.self) { tag in
-                                NavigationLink(value: TagFilter(tag: tag)) {
-                                    Text(tag)
-                                        .font(.caption.weight(.medium))
-                                        .foregroundStyle(AppColor.ink)
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 4)
-                                        .background(AppColor.accentSoft, in: Capsule())
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                    }
-                }
-
-                if let metaLine {
-                    Text(metaLine)
-                        .font(.subheadline)
-                        .foregroundStyle(AppColor.inkMuted)
-                }
-
-                HStack(spacing: 12) {
-                    if let average = recipe.averageRating {
-                        HStack(spacing: 6) {
-                            Text(String(format: "%.1f/10", average))
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(AppColor.ink)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 3)
-                                .background(AppColor.gold, in: Capsule())
-                            Text("Cooked ×\(recipe.timesCooked)")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(AppColor.inkMuted)
-                        }
-                    } else {
-                        Text("Not cooked yet")
-                            .font(.caption.weight(.semibold))
+                VStack(alignment: .leading, spacing: 16) {
+                    if let metaLine {
+                        Text(metaLine)
+                            .font(.subheadline)
                             .foregroundStyle(AppColor.inkMuted)
                     }
 
-                    Button {
-                        isPresentingLogCook = true
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "plus.circle.fill")
-                            Text("Log a Cook")
+                    statRow
+
+                    if let note = recipe.note, !note.isEmpty {
+                        Text("\u{201C}\(note)\u{201D}")
+                            .font(.subheadline)
+                            .italic()
+                            .foregroundStyle(AppColor.inkMuted)
+                            .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(AppColor.surfaceAlt, in: RoundedRectangle(cornerRadius: 12))
+                    }
+
+                    if !recipe.ingredients.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Ingredients").font(.system(.title3, design: .serif).weight(.bold)).foregroundStyle(AppColor.ink)
+                            LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible())], alignment: .leading, spacing: 10) {
+                                ForEach(recipe.ingredients) { ingredient in
+                                    HStack(alignment: .top, spacing: 8) {
+                                        Circle()
+                                            .strokeBorder(AppColor.accent, lineWidth: 1.6)
+                                            .frame(width: 15, height: 15)
+                                            .padding(.top, 2)
+                                        Text(ingredientLine(ingredient))
+                                            .font(.subheadline)
+                                            .foregroundStyle(AppColor.ink)
+                                    }
+                                }
+                            }
                         }
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(AppColor.ink)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(AppColor.secondarySoft, in: Capsule())
+                    }
+
+                    if !timelineSteps.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Method").font(.system(.title3, design: .serif).weight(.bold)).foregroundStyle(AppColor.ink)
+                            methodTimeline
+                        }
+                    }
+
+                    if let sourceURLString = recipe.sourceURL, let url = URL(string: sourceURLString) {
+                        Link(destination: url) {
+                            Label("View source", systemImage: "link")
+                        }
+                        .font(.subheadline)
+                        .foregroundStyle(AppColor.accent)
+                    }
+
+                    Button(role: .destructive) {
+                        isPresentingDeleteConfirmation = true
+                    } label: {
+                        Text("Delete Recipe")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.red)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
                     }
                     .buttonStyle(.plain)
+                    .padding(.top, 8)
                 }
-
-                if let note = recipe.note, !note.isEmpty {
-                    Text("\u{201C}\(note)\u{201D}")
-                        .font(.subheadline)
-                        .italic()
-                        .foregroundStyle(AppColor.inkMuted)
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(AppColor.surfaceAlt, in: RoundedRectangle(cornerRadius: 12))
-                }
-
-                if !recipe.ingredients.isEmpty {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Ingredients").font(.title3.bold()).foregroundStyle(AppColor.ink)
-                        ForEach(recipe.ingredients) { ingredient in
-                            Text("• \(ingredientLine(ingredient))")
-                                .foregroundStyle(AppColor.ink)
-                        }
-                    }
-                    .padding(14)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(AppColor.surfaceAlt, in: RoundedRectangle(cornerRadius: 14))
-                }
-
-                if !recipe.prepSteps.isEmpty {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Prep").font(.title3.bold()).foregroundStyle(AppColor.ink)
-                        ForEach(Array(recipe.prepSteps.enumerated()), id: \.offset) { index, step in
-                            HStack(alignment: .top, spacing: 8) {
-                                Text("\(index + 1)")
-                                    .font(.caption.weight(.bold))
-                                    .foregroundStyle(AppColor.ink)
-                                    .frame(width: 20, height: 20)
-                                    .background(AppColor.accentSoft, in: Circle())
-                                Text(step)
-                                    .foregroundStyle(AppColor.ink)
-                            }
-                        }
-                    }
-                    .padding(14)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(AppColor.surfaceAlt, in: RoundedRectangle(cornerRadius: 14))
-                }
-
-                if !recipe.instructionSteps.isEmpty {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Instructions").font(.title3.bold()).foregroundStyle(AppColor.ink)
-                        ForEach(Array(recipe.instructionSteps.enumerated()), id: \.offset) { index, step in
-                            HStack(alignment: .top, spacing: 8) {
-                                Text("\(index + 1)")
-                                    .font(.caption.weight(.bold))
-                                    .foregroundStyle(AppColor.surface)
-                                    .frame(width: 20, height: 20)
-                                    .background(AppColor.secondary, in: Circle())
-                                Text(step)
-                                    .foregroundStyle(AppColor.ink)
-                            }
-                        }
-                    }
-                    .padding(14)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(AppColor.surfaceAlt, in: RoundedRectangle(cornerRadius: 14))
-                }
-
-                if let sourceURLString = recipe.sourceURL, let url = URL(string: sourceURLString) {
-                    Link(destination: url) {
-                        Label("View source", systemImage: "link")
-                    }
-                    .font(.subheadline)
-                    .foregroundStyle(AppColor.accent)
-                }
+                .padding(20)
             }
-            .padding()
         }
         .background(AppColor.background)
         .navigationTitle(recipe.title)
@@ -195,19 +128,10 @@ struct RecipeDetailView: View {
                 }
             }
             ToolbarItem(placement: .primaryAction) {
-                Menu {
-                    Button {
-                        isPresentingEdit = true
-                    } label: {
-                        Label("Edit", systemImage: "pencil")
-                    }
-                    Button(role: .destructive) {
-                        isPresentingDeleteConfirmation = true
-                    } label: {
-                        Label("Delete Recipe", systemImage: "trash")
-                    }
+                Button {
+                    isPresentingEdit = true
                 } label: {
-                    Label("More", systemImage: "ellipsis.circle")
+                    Label("Edit", systemImage: "pencil")
                 }
             }
         }
@@ -225,6 +149,157 @@ struct RecipeDetailView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This can't be undone.")
+        }
+    }
+
+    @ViewBuilder
+    private var hero: some View {
+        ZStack(alignment: .bottomLeading) {
+            Group {
+                if !images.isEmpty {
+                    TabView {
+                        ForEach(Array(images.enumerated()), id: \.offset) { _, image in
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFill()
+                        }
+                    }
+                    .tabViewStyle(.page(indexDisplayMode: images.count > 1 ? .automatic : .never))
+                } else {
+                    RecipePlaceholderView(glyphSize: 64)
+                }
+            }
+
+            LinearGradient(
+                colors: [heroTint.opacity(0.05), AppColor.ink.opacity(0.4), AppColor.ink.opacity(0.92)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .allowsHitTesting(false)
+
+            VStack(alignment: .leading, spacing: 10) {
+                if let course = recipe.courseValue {
+                    Text(course.rawValue.uppercased())
+                        .font(.caption2.weight(.bold))
+                        .tracking(0.4)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 5)
+                        .background(heroTint, in: Capsule())
+                }
+                Text(recipe.title)
+                    .font(.system(size: 32, weight: .bold, design: .serif))
+                    .foregroundStyle(.white)
+                    .lineLimit(3)
+                if !recipe.tags.isEmpty {
+                    HStack(spacing: 4) {
+                        ForEach(Array(recipe.tags.enumerated()), id: \.offset) { index, tag in
+                            if index > 0 {
+                                Text("·").foregroundStyle(.white.opacity(0.6))
+                            }
+                            NavigationLink(value: TagFilter(tag: tag)) {
+                                Text(tag)
+                                    .font(.caption.weight(.medium))
+                                    .foregroundStyle(.white.opacity(0.85))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+            .padding(20)
+        }
+        .frame(height: 340)
+        .clipped()
+    }
+
+    @ViewBuilder
+    private var statRow: some View {
+        HStack(spacing: 10) {
+            if let average = recipe.averageRating {
+                statBlock(value: String(format: "%.1f", average), label: "RATING", color: AppColor.gold)
+                statBlock(value: "\(recipe.timesCooked)", label: "COOKED", color: AppColor.ink)
+            } else {
+                statBlock(value: "–", label: "NOT COOKED YET", color: AppColor.inkMuted)
+            }
+
+            Button {
+                isPresentingLogCook = true
+            } label: {
+                VStack(spacing: 2) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(.title2, design: .serif).weight(.bold))
+                    Text("LOG A COOK")
+                        .font(.caption2.weight(.bold))
+                        .tracking(0.3)
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(AppColor.secondary, in: RoundedRectangle(cornerRadius: 16))
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    @ViewBuilder
+    private func statBlock(value: String, label: String, color: Color) -> some View {
+        VStack(spacing: 2) {
+            Text(value)
+                .font(.system(.title2, design: .serif).weight(.bold))
+                .foregroundStyle(color)
+            Text(label)
+                .font(.caption2.weight(.bold))
+                .tracking(0.3)
+                .foregroundStyle(AppColor.inkMuted)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(AppColor.surface, in: RoundedRectangle(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(AppColor.surfaceAlt, lineWidth: 1))
+    }
+
+    @ViewBuilder
+    private var methodTimeline: some View {
+        let prepFraction = recipe.prepSteps.isEmpty ? 0 : Double(recipe.prepSteps.count) / Double(max(timelineSteps.count, 1))
+
+        ZStack(alignment: .topLeading) {
+            LinearGradient(
+                stops: recipe.prepSteps.isEmpty
+                    ? [Gradient.Stop(color: AppColor.secondary, location: 0), Gradient.Stop(color: AppColor.secondary, location: 1)]
+                    : [
+                        Gradient.Stop(color: AppColor.accent, location: 0),
+                        Gradient.Stop(color: AppColor.accent, location: prepFraction),
+                        Gradient.Stop(color: AppColor.secondary, location: prepFraction),
+                        Gradient.Stop(color: AppColor.secondary, location: 1),
+                    ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(width: 2)
+            .padding(.leading, 9)
+
+            VStack(alignment: .leading, spacing: 16) {
+                ForEach(Array(timelineSteps.enumerated()), id: \.offset) { index, item in
+                    HStack(alignment: .top, spacing: 10) {
+                        Text("\(index + 1)")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 20, height: 20)
+                            .background(item.isPrep ? AppColor.accent : AppColor.secondary, in: Circle())
+                        VStack(alignment: .leading, spacing: 2) {
+                            if let phase = item.phase {
+                                Text(phase.uppercased())
+                                    .font(.caption2.weight(.bold))
+                                    .tracking(0.3)
+                                    .foregroundStyle(item.isPrep ? AppColor.accent : AppColor.secondary)
+                            }
+                            Text(item.text)
+                                .foregroundStyle(AppColor.ink)
+                        }
+                    }
+                }
+            }
         }
     }
 
