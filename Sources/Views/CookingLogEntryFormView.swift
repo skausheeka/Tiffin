@@ -12,20 +12,27 @@ struct CookingLogEntryFormView: View {
     @State private var selectedRecipe: Recipe?
     @State private var date: Date
     @State private var rating: Int
-    @State private var timeText: String
+    @State private var cookDuration: TimeInterval
     @State private var noteText: String
     @State private var isPresentingRecipePicker = false
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var photoData: Data?
 
-    private var timeMinutes: Int? { Int(timeText) }
+    private var timeMinutes: Int { Int(cookDuration / 60) }
 
     init(preselectedRecipe: Recipe? = nil) {
         _selectedRecipe = State(initialValue: preselectedRecipe)
         _date = State(initialValue: .now)
         _rating = State(initialValue: 5)
-        _timeText = State(initialValue: "")
+        _cookDuration = State(initialValue: Self.defaultDuration(for: preselectedRecipe))
         _noteText = State(initialValue: "")
+    }
+
+    /// Pre-fills from the recipe's last logged cook so re-cooking something is a quick
+    /// confirm-or-tweak, not a blank required field every time. First-ever cook starts at 0.
+    private static func defaultDuration(for recipe: Recipe?) -> TimeInterval {
+        guard let lastLoggedTimeMinutes = recipe?.lastLoggedTimeMinutes else { return 0 }
+        return TimeInterval(lastLoggedTimeMinutes * 60)
     }
 
     var body: some View {
@@ -46,7 +53,7 @@ struct CookingLogEntryFormView: View {
                     }
                 }
                 Section("When") {
-                    DatePicker("Date & time", selection: $date)
+                    DatePicker("Date", selection: $date, displayedComponents: .date)
                 }
                 Section("How did it go?") {
                     VStack(spacing: 10) {
@@ -66,8 +73,8 @@ struct CookingLogEntryFormView: View {
                     .padding(.vertical, 4)
                 }
                 Section("How long did it take?") {
-                    TextField("Minutes", text: $timeText)
-                        .keyboardType(.numberPad)
+                    CookDurationPicker(duration: $cookDuration)
+                        .frame(height: 150)
                 }
                 Section("Photo") {
                     PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
@@ -104,17 +111,20 @@ struct CookingLogEntryFormView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", action: save)
-                        .disabled(selectedRecipe == nil || timeMinutes == nil)
+                        .disabled(selectedRecipe == nil || cookDuration <= 0)
                 }
             }
             .sheet(isPresented: $isPresentingRecipePicker) {
-                RecipePickerView(selection: $selectedRecipe)
+                RecipeLookupView(selection: $selectedRecipe)
+            }
+            .onChange(of: selectedRecipe) { _, newValue in
+                cookDuration = Self.defaultDuration(for: newValue)
             }
         }
     }
 
     private func save() {
-        guard let selectedRecipe, let timeMinutes else { return }
+        guard let selectedRecipe, cookDuration > 0 else { return }
         let note = noteText.trimmingCharacters(in: .whitespaces)
         let photoFilename = photoData.flatMap { PhotoStore.save($0) }
 
@@ -129,6 +139,47 @@ struct CookingLogEntryFormView: View {
         modelContext.insert(entry)
 
         dismiss()
+    }
+}
+
+/// Wraps `UIDatePicker`'s countdown-timer wheel — the same Hours/Min picker iOS uses for
+/// Alarm and Timer durations — so the unit is self-evident without a label.
+private struct CookDurationPicker: UIViewRepresentable {
+    @Binding var duration: TimeInterval
+
+    func makeUIView(context: Context) -> UIDatePicker {
+        let picker = UIDatePicker()
+        picker.datePickerMode = .countDownTimer
+        picker.preferredDatePickerStyle = .wheels
+        picker.countDownDuration = duration
+        picker.addTarget(
+            context.coordinator,
+            action: #selector(Coordinator.durationChanged(_:)),
+            for: .valueChanged
+        )
+        return picker
+    }
+
+    func updateUIView(_ uiView: UIDatePicker, context: Context) {
+        if uiView.countDownDuration != duration {
+            uiView.countDownDuration = duration
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(duration: $duration)
+    }
+
+    final class Coordinator: NSObject {
+        let duration: Binding<TimeInterval>
+
+        init(duration: Binding<TimeInterval>) {
+            self.duration = duration
+        }
+
+        @objc func durationChanged(_ sender: UIDatePicker) {
+            duration.wrappedValue = sender.countDownDuration
+        }
     }
 }
 
