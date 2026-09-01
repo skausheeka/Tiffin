@@ -28,8 +28,7 @@ struct RecipeCardView: View {
     }
 
     private var timeText: String? {
-        let total = (recipe.prepTimeMinutes ?? 0) + (recipe.cookTimeMinutes ?? 0)
-        return total > 0 ? "\(total) min" : nil
+        recipe.displayedTimeMinutes.map { "\($0) min" }
     }
 
     var body: some View {

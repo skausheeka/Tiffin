@@ -70,6 +70,25 @@ final class Recipe {
         cookingLogEntries?.count ?? 0
     }
 
+    /// The most recently logged cook's actual time, or nil if never cooked. Treats a
+    /// stored `0` as "no real value" rather than "zero minutes" — nothing cooks
+    /// instantly, so `0` only ever means an entry logged before this field existed
+    /// (SwiftData defaults new columns to `0` for pre-existing rows on migration).
+    var lastLoggedTimeMinutes: Int? {
+        let time = (cookingLogEntries ?? []).sorted { $0.date > $1.date }.first?.timeMinutes
+        guard let time, time > 0 else { return nil }
+        return time
+    }
+
+    /// The best time to show for this recipe — the last actual cook if there is one,
+    /// else the prep+cook estimate (manually entered or imported). Real data always
+    /// wins once you have it; a never-yet-cooked recipe still shows something useful.
+    var displayedTimeMinutes: Int? {
+        if let lastLoggedTimeMinutes { return lastLoggedTimeMinutes }
+        let estimate = (prepTimeMinutes ?? 0) + (cookTimeMinutes ?? 0)
+        return estimate > 0 ? estimate : nil
+    }
+
     /// Rated recipes only, highest average rating first, ties broken by times cooked.
     static func ranked(_ recipes: [Recipe]) -> [Recipe] {
         recipes

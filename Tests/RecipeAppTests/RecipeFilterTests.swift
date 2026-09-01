@@ -100,7 +100,7 @@ final class RecipeFilterTests: XCTestCase {
         context.insert(cookedOften)
         context.insert(cookedNever)
         for _ in 0..<3 {
-            context.insert(CookingLogEntry(rating: 5, recipe: cookedOften))
+            context.insert(CookingLogEntry(rating: 5, timeMinutes: 30, recipe: cookedOften))
         }
         try context.save()
 

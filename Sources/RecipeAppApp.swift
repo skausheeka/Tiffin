@@ -1,5 +1,6 @@
 import SwiftData
 import SwiftUI
+import UserNotifications
 
 @main
 struct RecipeAppApp: App {
@@ -12,6 +13,12 @@ struct RecipeAppApp: App {
             fatalError("Failed to create ModelContainer: \(error)")
         }
     }()
+
+    private let notificationDelegate = NotificationDelegate()
+
+    init() {
+        UNUserNotificationCenter.current().delegate = notificationDelegate
+    }
 
     var body: some Scene {
         WindowGroup {

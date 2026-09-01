@@ -12,15 +12,19 @@ struct CookingLogEntryFormView: View {
     @State private var selectedRecipe: Recipe?
     @State private var date: Date
     @State private var rating: Int
+    @State private var timeText: String
     @State private var noteText: String
     @State private var isPresentingRecipePicker = false
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var photoData: Data?
 
+    private var timeMinutes: Int? { Int(timeText) }
+
     init(preselectedRecipe: Recipe? = nil) {
         _selectedRecipe = State(initialValue: preselectedRecipe)
         _date = State(initialValue: .now)
         _rating = State(initialValue: 5)
+        _timeText = State(initialValue: "")
         _noteText = State(initialValue: "")
     }
 
@@ -61,6 +65,10 @@ struct CookingLogEntryFormView: View {
                     }
                     .padding(.vertical, 4)
                 }
+                Section("How long did it take?") {
+                    TextField("Minutes", text: $timeText)
+                        .keyboardType(.numberPad)
+                }
                 Section("Photo") {
                     PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
                         if let photoData, let uiImage = UIImage(data: photoData) {
@@ -96,7 +104,7 @@ struct CookingLogEntryFormView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", action: save)
-                        .disabled(selectedRecipe == nil)
+                        .disabled(selectedRecipe == nil || timeMinutes == nil)
                 }
             }
             .sheet(isPresented: $isPresentingRecipePicker) {
@@ -106,13 +114,14 @@ struct CookingLogEntryFormView: View {
     }
 
     private func save() {
-        guard let selectedRecipe else { return }
+        guard let selectedRecipe, let timeMinutes else { return }
         let note = noteText.trimmingCharacters(in: .whitespaces)
         let photoFilename = photoData.flatMap { PhotoStore.save($0) }
 
         let entry = CookingLogEntry(
             date: date,
             rating: rating,
+            timeMinutes: timeMinutes,
             note: note.isEmpty ? nil : note,
             photoFilename: photoFilename,
             recipe: selectedRecipe

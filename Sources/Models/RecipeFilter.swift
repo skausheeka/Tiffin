@@ -45,8 +45,7 @@ struct RecipeFilter: Equatable {
             return false
         }
         if let maxCookTimeMinutes {
-            let total = (recipe.prepTimeMinutes ?? 0) + (recipe.cookTimeMinutes ?? 0)
-            guard total > 0, total <= maxCookTimeMinutes else { return false }
+            guard let total = recipe.displayedTimeMinutes, total <= maxCookTimeMinutes else { return false }
         }
         if let cookedBucket, !cookedBucket.matches(timesCooked: recipe.timesCooked) {
             return false

@@ -27,6 +27,7 @@ struct DayPlanView: View {
                 .listRowBackground(AppColor.surface)
                 .swipeActions {
                     Button(role: .destructive) {
+                        CookLogReminderScheduler.cancel(for: entry)
                         modelContext.delete(entry)
                     } label: {
                         Label("Delete", systemImage: "trash")

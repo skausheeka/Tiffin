@@ -28,6 +28,14 @@ final class MealPlanEntryTests: XCTestCase {
         XCTAssertFalse(entry.expectsLeftovers)
     }
 
+    func test_init_assignsAUniqueID() {
+        let recipe = Recipe(title: "Dal")
+        let first = MealPlanEntry(date: .now, recipe: recipe)
+        let second = MealPlanEntry(date: .now, recipe: recipe)
+
+        XCTAssertNotEqual(first.id, second.id)
+    }
+
     func test_deletingRecipe_cascadesToItsMealPlanEntries() throws {
         let recipe = Recipe(title: "Dal")
         context.insert(recipe)

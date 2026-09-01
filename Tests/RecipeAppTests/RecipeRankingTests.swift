@@ -20,7 +20,7 @@ final class RecipeRankingTests: XCTestCase {
     /// Logs one cooking entry per rating given, in order, all dated `.now`.
     private func log(_ ratings: [Int], for recipe: Recipe) {
         for rating in ratings {
-            let entry = CookingLogEntry(rating: rating, recipe: recipe)
+            let entry = CookingLogEntry(rating: rating, timeMinutes: 30, recipe: recipe)
             context.insert(entry)
         }
     }

@@ -3,6 +3,7 @@ import SwiftData
 
 @Model
 final class MealPlanEntry {
+    var id: UUID = UUID()
     var date: Date = Date.now
     var servings: Int?
     var expectsLeftovers: Bool = false

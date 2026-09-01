@@ -23,8 +23,12 @@ struct RecipeDetailView: View {
 
     private var metaLine: String? {
         var parts: [String] = []
-        if let prep = recipe.prepTimeMinutes { parts.append("Prep \(prep) min") }
-        if let cook = recipe.cookTimeMinutes { parts.append("Cook \(cook) min") }
+        if let lastLogged = recipe.lastLoggedTimeMinutes {
+            parts.append("Cooked in \(lastLogged) min")
+        } else {
+            if let prep = recipe.prepTimeMinutes { parts.append("Prep \(prep) min") }
+            if let cook = recipe.cookTimeMinutes { parts.append("Cook \(cook) min") }
+        }
         if let servings = recipe.servings { parts.append("Serves \(servings)") }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }

@@ -73,11 +73,13 @@ struct MealPlanEntryFormView: View {
 
     private func save() {
         guard let selectedRecipe else { return }
+        CookLogReminderScheduler.requestAuthorizationIfNeeded()
         if let existingEntry {
             existingEntry.recipe = selectedRecipe
             existingEntry.date = date
             existingEntry.servings = servings
             existingEntry.expectsLeftovers = expectsLeftovers
+            CookLogReminderScheduler.schedule(for: existingEntry)
         } else {
             let entry = MealPlanEntry(
                 date: date,
@@ -86,12 +88,14 @@ struct MealPlanEntryFormView: View {
                 expectsLeftovers: expectsLeftovers
             )
             modelContext.insert(entry)
+            CookLogReminderScheduler.schedule(for: entry)
         }
         dismiss()
     }
 
     private func delete() {
         if let existingEntry {
+            CookLogReminderScheduler.cancel(for: existingEntry)
             modelContext.delete(existingEntry)
         }
         dismiss()

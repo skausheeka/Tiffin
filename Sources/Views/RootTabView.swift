@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 private enum AppTab: Hashable {
@@ -5,7 +6,10 @@ private enum AppTab: Hashable {
 }
 
 struct RootTabView: View {
+    @Environment(\.modelContext) private var modelContext
     @State private var selectedTab: AppTab = .recipes
+    @State private var router = CookLogDeepLinkRouter.shared
+    @State private var recipeToLog: Recipe?
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -33,6 +37,18 @@ struct RootTabView: View {
         }
         .toolbarBackground(AppColor.surface, for: .tabBar)
         .toolbarBackground(.visible, for: .tabBar)
+        .sheet(item: $recipeToLog) { recipe in
+            CookingLogEntryFormView(preselectedRecipe: recipe)
+        }
+        .onChange(of: router.pendingEntryID) { _, newValue in
+            guard let newValue else { return }
+            router.pendingEntryID = nil
+            let id = newValue
+            let descriptor = FetchDescriptor<MealPlanEntry>(predicate: #Predicate { $0.id == id })
+            if let entry = try? modelContext.fetch(descriptor).first {
+                recipeToLog = entry.recipe
+            }
+        }
     }
 }
 
