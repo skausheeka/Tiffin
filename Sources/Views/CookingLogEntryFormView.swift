@@ -12,8 +12,6 @@ struct CookingLogEntryFormView: View {
     @State private var selectedRecipe: Recipe?
     @State private var date: Date
     @State private var rating: Int
-    @State private var prepTimeText: String
-    @State private var cookTimeText: String
     @State private var noteText: String
     @State private var isPresentingRecipePicker = false
     @State private var selectedPhotoItem: PhotosPickerItem?
@@ -23,8 +21,6 @@ struct CookingLogEntryFormView: View {
         _selectedRecipe = State(initialValue: preselectedRecipe)
         _date = State(initialValue: .now)
         _rating = State(initialValue: 5)
-        _prepTimeText = State(initialValue: "")
-        _cookTimeText = State(initialValue: "")
         _noteText = State(initialValue: "")
     }
 
@@ -47,12 +43,6 @@ struct CookingLogEntryFormView: View {
                 }
                 Section("When") {
                     DatePicker("Date & time", selection: $date)
-                }
-                Section("How long did it take?") {
-                    TextField("Prep time (minutes)", text: $prepTimeText)
-                        .keyboardType(.numberPad)
-                    TextField("Cook time (minutes)", text: $cookTimeText)
-                        .keyboardType(.numberPad)
                 }
                 Section("How did it go?") {
                     VStack(spacing: 10) {
@@ -118,29 +108,16 @@ struct CookingLogEntryFormView: View {
     private func save() {
         guard let selectedRecipe else { return }
         let note = noteText.trimmingCharacters(in: .whitespaces)
-        let prepTime = Int(prepTimeText)
-        let cookTime = Int(cookTimeText)
         let photoFilename = photoData.flatMap { PhotoStore.save($0) }
 
         let entry = CookingLogEntry(
             date: date,
             rating: rating,
             note: note.isEmpty ? nil : note,
-            prepTimeMinutes: prepTime,
-            cookTimeMinutes: cookTime,
             photoFilename: photoFilename,
             recipe: selectedRecipe
         )
         modelContext.insert(entry)
-
-        // If the recipe has no time estimate of its own yet, use the first logged
-        // timing to fill it in rather than leaving it blank forever.
-        if selectedRecipe.prepTimeMinutes == nil, let prepTime {
-            selectedRecipe.prepTimeMinutes = prepTime
-        }
-        if selectedRecipe.cookTimeMinutes == nil, let cookTime {
-            selectedRecipe.cookTimeMinutes = cookTime
-        }
 
         dismiss()
     }
