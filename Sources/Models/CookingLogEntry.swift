@@ -4,7 +4,7 @@ import SwiftData
 @Model
 final class CookingLogEntry {
     var date: Date = Date.now
-    var rating: Int = 0
+    var rating: Double = 0
     var timeMinutes: Int = 0
     var note: String?
     var photoFilename: String?
@@ -12,7 +12,7 @@ final class CookingLogEntry {
 
     init(
         date: Date = .now,
-        rating: Int,
+        rating: Double,
         timeMinutes: Int,
         note: String? = nil,
         photoFilename: String? = nil,

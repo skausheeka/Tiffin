@@ -62,7 +62,7 @@ final class Recipe {
         let entries = cookingLogEntries ?? []
         guard !entries.isEmpty else { return nil }
         let total = entries.reduce(0) { $0 + $1.rating }
-        return Double(total) / Double(entries.count)
+        return total / Double(entries.count)
     }
 
     /// Number of times this recipe has been logged as cooked.

@@ -1,3 +1,4 @@
+import Charts
 import SwiftUI
 import UIKit
 
@@ -52,6 +53,20 @@ struct RecipePerformanceView: View {
                 .listRowBackground(AppColor.surface)
             }
 
+            if sortedEntries.count >= 2 {
+                Section("Last 5 Cooks") {
+                    RatingTrendChart(entries: Array(sortedEntries.prefix(5).reversed()))
+                        .listRowBackground(AppColor.surface)
+                }
+
+                if sortedEntries.count > 5 {
+                    Section("Lifetime") {
+                        RatingTrendChart(entries: Array(sortedEntries.reversed()))
+                            .listRowBackground(AppColor.surface)
+                    }
+                }
+            }
+
             Section("Cook History") {
                 if sortedEntries.isEmpty {
                     Text("No cooks logged yet.")
@@ -70,6 +85,101 @@ struct RecipePerformanceView: View {
         .background(AppColor.background)
         .navigationTitle(recipe.title)
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// A rating-over-time line, oldest cook on the left so an upward or downward trend
+/// reads left-to-right. `entries` must already be in chronological (ascending) order.
+/// Cooks sit at equally-spaced positions (not proportional to real elapsed time) —
+/// how long ago something was cooked isn't the point, only the rating trend is.
+private struct RatingTrendChart: View {
+    let entries: [CookingLogEntry]
+
+    private struct Point: Identifiable {
+        let id: Int
+        let index: Double
+        let date: Date
+        let rating: Double
+    }
+
+    /// How many points show at once before the chart scrolls. Every point still gets
+    /// this much room, so its date label always has space and never gets truncated.
+    private static let visiblePointCount = 5
+
+    /// Margin reserved on each side of the plotted range and of the visible window, so
+    /// a point sitting right at the edge never has its dot half-clipped by the plot bounds.
+    private static let edgePadding: Double = 0.5
+
+    /// Which unit the visible window starts at. Defaults to the tail end (minus the
+    /// edge margin) so the most recent cook is on screen right away, dot included.
+    @State private var scrollPosition: Double
+
+    init(entries: [CookingLogEntry]) {
+        self.entries = entries
+        let count = entries.count
+        _scrollPosition = State(
+            initialValue: Double(max(count - Self.visiblePointCount, 0)) - Self.edgePadding
+        )
+    }
+
+    private var points: [Point] {
+        entries.enumerated().map { offset, entry in
+            Point(id: offset, index: Double(offset), date: entry.date, rating: entry.rating)
+        }
+    }
+
+    private var visibleLength: Double {
+        Double(min(max(points.count, 1), Self.visiblePointCount))
+    }
+
+    private var fullDomain: ClosedRange<Double> {
+        let maxIndex = Double(max(points.count - 1, 0))
+        return -Self.edgePadding...(maxIndex + Self.edgePadding)
+    }
+
+    var body: some View {
+        Chart(points) { point in
+            LineMark(
+                x: .value("Cook", point.index),
+                y: .value("Rating", point.rating)
+            )
+            .foregroundStyle(AppColor.accent)
+            .interpolationMethod(.catmullRom)
+            .symbol {
+                Circle()
+                    .fill(AppColor.accent)
+                    .frame(width: 8, height: 8)
+            }
+        }
+        .chartYScale(domain: -Self.edgePadding...(10 + Self.edgePadding))
+        .chartXScale(domain: fullDomain)
+        .chartXAxis {
+            AxisMarks(values: points.map(\.index)) { value in
+                AxisGridLine()
+                AxisTick()
+                if let raw = value.as(Double.self) {
+                    let index = Int(raw.rounded())
+                    if points.indices.contains(index) {
+                        AxisValueLabel(Self.axisLabel(for: points[index].date))
+                    }
+                }
+            }
+        }
+        .chartScrollableAxes(.horizontal)
+        .chartXVisibleDomain(length: visibleLength)
+        .chartScrollPosition(x: $scrollPosition)
+        .frame(height: 130)
+        .padding(.vertical, 4)
+    }
+
+    /// "Sep 2" for a date in the current year, "Jan 2025" for anything older — so a
+    /// recipe that took a long time to recreate still reads clearly on the axis.
+    private static func axisLabel(for date: Date) -> String {
+        let calendar = Calendar.current
+        if calendar.component(.year, from: date) == calendar.component(.year, from: .now) {
+            return date.formatted(.dateTime.month(.abbreviated).day())
+        }
+        return date.formatted(.dateTime.month(.abbreviated).year())
     }
 }
 
@@ -96,7 +206,7 @@ private struct CookLogRow: View {
             .clipShape(RoundedRectangle(cornerRadius: 10))
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("\(entry.rating)/10")
+                Text(String(format: "%.1f/10", entry.rating))
                     .font(.caption.weight(.bold))
                     .foregroundStyle(AppColor.ink)
                     .padding(.horizontal, 7)

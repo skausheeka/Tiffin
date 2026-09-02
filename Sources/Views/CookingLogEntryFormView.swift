@@ -11,7 +11,7 @@ struct CookingLogEntryFormView: View {
 
     @State private var selectedRecipe: Recipe?
     @State private var date: Date
-    @State private var rating: Int
+    @State private var rating: Double
     @State private var cookDuration: TimeInterval
     @State private var noteText: String
     @State private var isPresentingRecipePicker = false
@@ -57,18 +57,11 @@ struct CookingLogEntryFormView: View {
                 }
                 Section("How did it go?") {
                     VStack(spacing: 10) {
-                        Text("\(rating)/10")
+                        Text(String(format: "%.1f/10", rating))
                             .font(.title3.bold())
                             .foregroundStyle(AppColor.gold)
-                        Slider(
-                            value: Binding(
-                                get: { Double(rating) },
-                                set: { rating = Int($0.rounded()) }
-                            ),
-                            in: 1...10,
-                            step: 1
-                        )
-                        .tint(AppColor.gold)
+                        Slider(value: $rating, in: 1...10, step: 0.1)
+                            .tint(AppColor.gold)
                     }
                     .padding(.vertical, 4)
                 }
