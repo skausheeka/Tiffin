@@ -188,7 +188,7 @@ private struct CookLogRow: View {
 
     private var photoImage: UIImage? {
         guard let filename = entry.photoFilename else { return nil }
-        return UIImage(contentsOfFile: PhotoStore.url(for: filename).path)
+        return PhotoStore.image(for: filename)
     }
 
     var body: some View {

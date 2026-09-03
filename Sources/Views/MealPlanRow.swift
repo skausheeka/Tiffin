@@ -6,7 +6,7 @@ struct MealPlanRow: View {
 
     private var coverImage: UIImage? {
         guard let filename = entry.recipe?.coverPhotoFilename else { return nil }
-        return UIImage(contentsOfFile: PhotoStore.url(for: filename).path)
+        return PhotoStore.image(for: filename)
     }
 
     var body: some View {

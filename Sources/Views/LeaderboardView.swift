@@ -52,7 +52,7 @@ private struct LeaderboardRow: View {
 
     private var coverImage: UIImage? {
         guard let filename = recipe.coverPhotoFilename else { return nil }
-        return UIImage(contentsOfFile: PhotoStore.url(for: filename).path)
+        return PhotoStore.image(for: filename)
     }
 
     var body: some View {

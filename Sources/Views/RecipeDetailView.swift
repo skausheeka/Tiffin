@@ -14,7 +14,7 @@ struct RecipeDetailView: View {
     @State private var isPresentingDeleteConfirmation = false
 
     private var images: [UIImage] {
-        recipe.photoFilenames.compactMap { UIImage(contentsOfFile: PhotoStore.url(for: $0).path) }
+        recipe.photoFilenames.compactMap { PhotoStore.image(for: $0) }
     }
 
     private var heroTint: Color {
