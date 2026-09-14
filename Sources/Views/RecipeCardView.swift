@@ -21,6 +21,9 @@ struct RecipeCardView: View {
     let recipe: Recipe
     var onEdit: (() -> Void)? = nil
     var onDelete: (() -> Void)? = nil
+    /// When set, the course ribbon becomes its own tap target (e.g. to jump into that
+    /// category) instead of just labeling the card. Nil elsewhere keeps it a plain label.
+    var onTapCourse: ((RecipeCourse) -> Void)? = nil
 
     private var coverImage: UIImage? {
         guard let filename = recipe.coverPhotoFilename else { return nil }
@@ -54,14 +57,20 @@ struct RecipeCardView: View {
             )
 
             if let course = recipe.courseValue {
-                Text(course.rawValue)
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(RibbonShape().fill(AppColor.forCourse(course)))
-                    .padding(.top, 12)
-                    .offset(x: -6)
+                Group {
+                    if let onTapCourse {
+                        Button {
+                            onTapCourse(course)
+                        } label: {
+                            ribbonLabel(for: course)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        ribbonLabel(for: course)
+                    }
+                }
+                .padding(.top, 12)
+                .offset(x: -6)
             }
 
             if onEdit != nil || onDelete != nil {
@@ -143,5 +152,14 @@ struct RecipeCardView: View {
         }
         .aspectRatio(3.0 / 4.0, contentMode: .fill)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private func ribbonLabel(for course: RecipeCourse) -> some View {
+        Text(course.rawValue)
+            .font(.caption2.weight(.bold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(RibbonShape().fill(AppColor.forCourse(course)))
     }
 }

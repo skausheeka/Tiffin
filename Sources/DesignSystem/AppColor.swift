@@ -44,6 +44,12 @@ enum AppColor {
     static let side = Color(light: Color(hex: 0x6E9B72), dark: Color(hex: 0x8FC494))
     static let snack = Color(light: Color(hex: 0x9585B8), dark: Color(hex: 0xB6A8D6))
 
+    // A soft wash blending the three signature hues — for header/hero bands that want
+    // atmosphere without competing with photo-forward card content sitting below them.
+    static let auroraIndigo = Color(light: Color(hex: 0xEEF0FB), dark: Color(hex: 0x22213A))
+    static let auroraRose = Color(light: Color(hex: 0xF7ECF1), dark: Color(hex: 0x2E2230))
+    static let auroraGold = Color(light: Color(hex: 0xFDF3DD), dark: Color(hex: 0x2E2716))
+
     static func forCourse(_ course: RecipeCourse?) -> Color {
         switch course {
         case .breakfast: breakfast
