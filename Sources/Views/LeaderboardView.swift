@@ -55,12 +55,20 @@ private struct LeaderboardRow: View {
         return PhotoStore.image(for: filename)
     }
 
+    /// Gold for #1 (matching the rating badge's own gold elsewhere), silver for #2,
+    /// bronze for #3 — nil everywhere else, where rank is just a plain number.
+    private var medalColor: Color? {
+        switch rank {
+        case 1: AppColor.gold
+        case 2: AppColor.silver
+        case 3: AppColor.bronze
+        default: nil
+        }
+    }
+
     var body: some View {
         HStack(spacing: 10) {
-            Text("\(rank)")
-                .font(.system(.subheadline, design: .serif).bold())
-                .foregroundStyle(AppColor.inkMuted)
-                .frame(width: 20)
+            rankBadge
 
             Group {
                 if let coverImage {
@@ -85,7 +93,7 @@ private struct LeaderboardRow: View {
                             .foregroundStyle(AppColor.ink)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(AppColor.gold, in: Capsule())
+                            .background(AppColor.forRating(average), in: Capsule())
                         Text("Cooked ×\(recipe.timesCooked)")
                             .font(.caption2)
                             .foregroundStyle(AppColor.inkMuted)
@@ -94,5 +102,21 @@ private struct LeaderboardRow: View {
             }
         }
         .padding(.vertical, 2)
+    }
+
+    @ViewBuilder
+    private var rankBadge: some View {
+        if let medalColor {
+            Text("\(rank)")
+                .font(.system(.subheadline, design: .serif).bold())
+                .foregroundStyle(.white)
+                .frame(width: 26, height: 26)
+                .background(medalColor, in: Circle())
+        } else {
+            Text("\(rank)")
+                .font(.system(.subheadline, design: .serif).bold())
+                .foregroundStyle(AppColor.inkMuted)
+                .frame(width: 26, height: 26)
+        }
     }
 }

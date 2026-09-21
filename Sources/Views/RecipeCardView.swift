@@ -106,7 +106,7 @@ struct RecipeCardView: View {
                     .foregroundStyle(AppColor.ink)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
-                    .background(AppColor.gold, in: Capsule())
+                    .background(AppColor.forRating(average), in: Capsule())
                     .padding(10)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
             }

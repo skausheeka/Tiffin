@@ -38,6 +38,19 @@ enum AppColor {
     static let gold = Color(light: Color(hex: 0xF5B400), dark: Color(hex: 0xFFD873))
     static let goldSoft = Color(light: Color(hex: 0xFFEEC2), dark: Color(hex: 0x4A3A12))
 
+    // Podium colors for #2 and #3 on the leaderboard — #1 reuses gold above.
+    static let silver = Color(light: Color(hex: 0x8E93A8), dark: Color(hex: 0xB7BBCC))
+    static let bronze = Color(light: Color(hex: 0xA66B42), dark: Color(hex: 0xC99568))
+
+    // Endpoints for `forRating` below — gold (defined above) is reused as the midpoint,
+    // so a perfectly middling rating looks exactly like the rating badges always have.
+    private static let ratingLow: UInt32 = 0xD9695D
+    private static let ratingLowDark: UInt32 = 0xE89488
+    private static let ratingMid: UInt32 = 0xF5B400
+    private static let ratingMidDark: UInt32 = 0xFFD873
+    private static let ratingHigh: UInt32 = 0x6FA36B
+    private static let ratingHighDark: UInt32 = 0x94C48F
+
     // Same muted treatment as the trio above, for the newer course buckets — a 6-color
     // course palette shouldn't have three quiet tones and three loud ones.
     static let breakfast = Color(light: Color(hex: 0xC99A3B), dark: Color(hex: 0xE0BB6F))
@@ -60,5 +73,34 @@ enum AppColor {
         case .dessert: tertiary
         case nil: inkMuted
         }
+    }
+
+    /// Red at 1, gold at the midpoint, green at 10 — a traffic-light read on a rating
+    /// badge at a glance, without needing to actually read the number.
+    static func forRating(_ rating: Double) -> Color {
+        let t = min(max((rating - 1) / 9, 0), 1)
+        if t < 0.5 {
+            let segment = t / 0.5
+            return Color(
+                light: interpolate(ratingLow, ratingMid, segment),
+                dark: interpolate(ratingLowDark, ratingMidDark, segment)
+            )
+        } else {
+            let segment = (t - 0.5) / 0.5
+            return Color(
+                light: interpolate(ratingMid, ratingHigh, segment),
+                dark: interpolate(ratingMidDark, ratingHighDark, segment)
+            )
+        }
+    }
+
+    private static func interpolate(_ from: UInt32, _ to: UInt32, _ t: Double) -> Color {
+        func component(_ hex: UInt32, _ shift: UInt32) -> Double {
+            Double((hex >> shift) & 0xFF)
+        }
+        let r = component(from, 16) + (component(to, 16) - component(from, 16)) * t
+        let g = component(from, 8) + (component(to, 8) - component(from, 8)) * t
+        let b = component(from, 0) + (component(to, 0) - component(from, 0)) * t
+        return Color(red: r / 255, green: g / 255, blue: b / 255)
     }
 }
